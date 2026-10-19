@@ -613,7 +613,8 @@ function standingsTab(){
     <div class="muted num">Points ${st.club[s].pf} for, ${st.club[s].pa} against</div></div>`;
   const dbRes=`<section class="card"><h3>Dreambreaker</h3><p class="sub">One game per division, first to 25. Shown separately from the games-won totals.</p><div class="tbl"><table><tbody>${S.divisions.map(d=>{const i=dbInfo(d), started=i.h+i.a>0;
     return `<tr><td>${esc(d.name)} <span class="muted">${esc(d.dupr)}</span></td><td>${started?`<b class="atp">${i.h}</b> – <b class="dural">${i.a}</b>`:`<span class="muted">–</span>`}</td><td>${i.over?(i.winner==="h"?`<b class="atp">${esc(c.h.short)} win</b>`:`<b class="dural">${esc(c.a.short)} win</b>`):started?"In play":"Not played yet"}</td></tr>`}).join("")}</tbody></table></div></section>`;
-  return `<section class="clubs">${ct("h","atp")}${ct("a","dural")}</section>${dbRes}
+  return `<div class="actions"><button class="btn primary" data-act="pdf" data-kind="results">⬇ Download final results (PDF)</button><span class="muted" style="font-size:13px">Club totals, dreambreakers, team and player tables, and every score</span></div>
+  <section class="clubs">${ct("h","atp")}${ct("a","dural")}</section>${dbRes}
   <section class="grid2">${S.divisions.map(d=>`<div class="card"><h3>${esc(d.name)}</h3><p class="sub">${esc(d.dupr)} · ranked by games won, then points difference</p>${teamTable(st,d,false)}</div>`).join("")}</section>
   <section class="grid2">${S.divisions.map(d=>{
     const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
@@ -654,6 +655,7 @@ function setupTab(){
       <button class="btn" data-act="pdf" data-kind="schedule">Game schedule + teams</button>
       <button class="btn" data-act="pdf" data-kind="cards">Score cards (1 page per round)</button>
       <button class="btn" data-act="pdf" data-kind="courts">Court sheets (1 page per court)</button>
+      <button class="btn" data-act="pdf" data-kind="results">Final results</button>
     </div></section>
   <section class="card"><h3>Scores</h3><p class="sub">${Object.keys(S.scores).length} game scores recorded.</p>
     <div class="actions"><button class="btn danger" data-act="clearScores">Clear all scores</button><span class="muted" id="clearConfirm"></span></div></section>`;
@@ -939,17 +941,88 @@ function pdfCourtSheets(doc,first){
   });
 }
 
+function pdfTable(doc,y,cols,rows,opt={}){
+  // cols: [{h:"Header",x:10,w:40,align:"left"|"right"|"center",side:"h"|"a"}]
+  const rh=opt.rh||6.2;
+  doc.setFillColor(...C_GREY);doc.rect(10,y,190,5.5,"F");doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...C_MUTED);
+  cols.forEach(c=>doc.text(TX(c.h),c.align==="right"?c.x+c.w:c.align==="center"?c.x+c.w/2:c.x,y+3.9,{align:c.align||"left"}));
+  doc.setTextColor(...C_INK); y+=5.5;
+  rows.forEach((r,i)=>{
+    if(i%2){doc.setFillColor(247,249,252);doc.rect(10,y,190,rh,"F")}
+    cols.forEach((c,j)=>{const v=r[j];if(v==null)return;const t=typeof v==="object"?v:{t:v};
+      doc.setFont("helvetica",t.b?"bold":"normal");doc.setFontSize(t.fs||8.5);
+      if(t.side)doc.setTextColor(...(t.side==="h"?C_ATP:C_DURAL)); else if(t.muted)doc.setTextColor(...C_MUTED);
+      doc.text(TX(String(t.t)),c.align==="right"?c.x+c.w:c.align==="center"?c.x+c.w/2:c.x,y+rh-1.9,{align:c.align||"left",maxWidth:c.w});
+      doc.setTextColor(...C_INK);});
+    y+=rh;
+  });
+  return y;
+}
+function pdfResults(doc){
+  const st=stats(), c=S.clubs, H=st.club.h, A=st.club.a;
+  const win=H.w>A.w?"h":A.w>H.w?"a":null;
+  pdfHead(doc,"Final results",win?`${c[win].name} win the challenge`:"Challenge drawn");
+  // club totals
+  let y=26;
+  [["h",10],["a",108]].forEach(([sd,x])=>{const t=st.club[sd];
+    doc.setDrawColor(...(sd==="h"?C_ATP:C_DURAL));doc.setLineWidth(1.2);doc.line(x,y,x+92,y);doc.setLineWidth(.3);
+    doc.setFont("helvetica","bold");doc.setFontSize(9);clubText(doc,sd,c[sd].name.toUpperCase(),x,y+6);
+    doc.setFontSize(30);clubText(doc,sd,String(t.w),x,y+19);
+    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);
+    doc.text(TX(`games won  -  ${S.divisions.map(d=>`${d.name}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
+    doc.text(TX(`Points ${t.pf} for, ${t.pa} against${t.d?`  -  ${t.d} drawn`:""}`),x+20,y+19);doc.setTextColor(...C_INK);
+  });
+  y+=27;
+  // dreambreakers
+  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text("Dreambreakers",10,y);y+=2;
+  y=pdfTable(doc,y,[{h:"Division",x:12,w:60},{h:c.h.short,x:110,w:15,align:"center"},{h:c.a.short,x:130,w:15,align:"center"},{h:"Result",x:150,w:48,align:"right"}],
+    S.divisions.map(d=>{const i=dbInfo(d),played=i.h+i.a>0;return [`${d.name}  ${d.dupr}`,{t:played?i.h:"-",b:1,side:"h"},{t:played?i.a:"-",b:1,side:"a"},
+      i.over?{t:`${c[i.winner].short} win`,b:1,side:i.winner}:{t:played?"Not finished":"Not played",muted:1}]}));
+  y+=6;
+  // team standings
+  S.divisions.forEach(d=>{
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${d.name} teams`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(d.dupr),48,y);doc.setTextColor(...C_INK);y+=2;
+    const rows=rank(Object.values(st.team).filter(t=>t.k.startsWith(d.id+"-")));
+    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Team",x:20,w:60},{h:"Ties W-L",x:84,w:18,align:"center"},{h:"W",x:106,w:12,align:"right"},{h:"D",x:120,w:12,align:"right"},{h:"L",x:134,w:12,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:184,w:14,align:"right"}],
+      rows.map((t,i)=>[i+1,{t:S.teams[t.k].name,b:1,side:sideOf(t.k)},`${t.tw}-${t.tl}${t.tt?`-${t.tt}`:""}`,t.w,t.d,t.l,t.pf,t.pa,{t:sgn(t.pf-t.pa),b:1}]));
+    y+=6;
+  });
+  pdfFoot(doc);
+  // players
+  doc.addPage(); pdfHead(doc,"Final results - players","Every player played 6 games");
+  y=27;
+  S.divisions.forEach(d=>{
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${d.name} players`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(d.dupr),50,y);doc.setTextColor(...C_INK);y+=2;
+    const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
+    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Player",x:20,w:62},{h:"Team",x:86,w:40},{h:"W",x:132,w:10,align:"right"},{h:"D",x:146,w:10,align:"right"},{h:"L",x:160,w:10,align:"right"},{h:"+/-",x:180,w:18,align:"right"}],
+      rows.map((p,i)=>[i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.d,p.l,{t:sgn(p.pf-p.pa),b:1}]),{rh:5.9});
+    y+=7;
+  });
+  pdfFoot(doc);
+  // every score
+  doc.addPage(); pdfHead(doc,"Final results - every score",`Scores shown ${c.h.short} first`);
+  y=27; const ms=matches();
+  for(let r=1;r<=ROUNDS;r++){
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(`Round ${r}`,10,y);y+=2;
+    y=pdfTable(doc,y,[{h:"Ct",x:12,w:8},{h:"Rating",x:22,w:28},{h:c.h.short+" team",x:52,w:34},{h:c.a.short+" team",x:88,w:34},{h:"Game 1",x:124,w:16,align:"center"},{h:"Game 2",x:142,w:16,align:"center"},{h:"Game 3",x:160,w:16,align:"center"},{h:"Games",x:182,w:16,align:"center"}],
+      ms.filter(m=>m.r===r).sort((a,b)=>a.court-b.court).map(m=>{let hw=0,aw=0;const g=[1,2,3].map(n=>{const x=sc(m.key,n);if(!x)return {t:"-",muted:1};if(x[0]>x[1])hw++;else if(x[1]>x[0])aw++;return `${x[0]}-${x[1]}`});
+        return [m.court,{t:m.div.dupr,fs:7.5,muted:1},{t:S.teams[m.h].name,b:1,side:"h"},{t:S.teams[m.a].name,b:1,side:"a"},...g,{t:`${hw}-${aw}`,b:1}]}));
+    y+=7;
+  }
+  pdfFoot(doc);
+}
 function buildPDF(JsPDF,kind){
   const doc=new JsPDF({unit:"mm",format:"a4"});
   if(kind==="schedule"||kind==="all") pdfSchedule(doc);
   if(kind==="cards"||kind==="all") pdfScoreCards(doc,kind==="cards");
   if(kind==="courts"||kind==="all") pdfCourtSheets(doc,kind==="courts");
+  if(kind==="results") pdfResults(doc);
   return doc;
 }
 async function makeSheets(kind){
   let JsPDF; try{JsPDF=await loadJsPDF()}catch(e){toast("Couldn't load the PDF maker. Check the internet connection and try again.");return}
   const doc=buildPDF(JsPDF,kind);
-  const names={all:"All sheets",schedule:"Schedule",cards:"Score cards",courts:"Court sheets"};
+  const names={all:"All sheets",schedule:"Schedule",cards:"Score cards",courts:"Court sheets",results:"Final results"};
   const a=document.createElement("a");a.href=URL.createObjectURL(doc.output("blob"));a.download=`ATP v Dural Interclub - ${names[kind]}.pdf`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),15000);
   toast("PDF downloaded. Open it and print on A4.");
