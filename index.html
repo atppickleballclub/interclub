@@ -1068,7 +1068,7 @@ function render(){
   if(configError){app.innerHTML=`<main><div class="wrap"><div class="card"><h3>Almost there</h3><p>${esc(configError)}</p></div></div></main>`;return}
   if(!loaded){
     app.innerHTML=`<main><div class="wrap"><div class="card"><h3>${missing?"Event not set up yet":"Loading the draw…"}</h3>
-      ${missing?(canEdit?`<p class="sub">The database is ready but has no event yet. Create it with the example teams, then enter the real names on the Teams tab.</p><button class="btn primary" data-act="createEvent">Create the event</button>`:`<p class="sub">Committee members: log in below to set it up.</p>`):""}
+      ${missing?(canEdit?`<p class="sub">The database is ready but has no event yet. Create it with the example teams, then enter the real names on the Teams tab.</p><button class="btn primary" data-act="createEvent">Create the event</button>`:(readOnlyReason?`<p class="banner warn" style="margin:8px 0 0">${esc(readOnlyReason)}</p>`:`<p class="sub">Committee members: log in below to set it up.</p>`)):""}
     </div></div>${missing?loginBox():""}</main>${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;return}
   if(scorerDiv()){app.innerHTML=scorerView(scorerDiv())+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
   if(isTV()){app.innerHTML=tvView();return}
