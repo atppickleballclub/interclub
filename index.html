@@ -625,12 +625,195 @@ function standingsTab(){
 
 /* ----- teams ----- */
 function teamsTab(){
-  return S.divisions.map(d=>`<section class="card"><h3>${esc(d.name)}</h3><p class="sub">${esc(d.dupr)} · players numbered 1–3 set the pairs: 1 &amp; 2, then 1 &amp; 3, then 2 &amp; 3 · <span class="cap" style="margin:0">C</span> marks the team captain</p>
+  return (editing()?csvCard():"")+S.divisions.map(d=>`<section class="card"><h3>${esc(d.name)}</h3><p class="sub">${esc(d.dupr)} · players numbered 1–3 set the pairs: 1 &amp; 2, then 1 &amp; 3, then 2 &amp; 3 · <span class="cap" style="margin:0">C</span> marks the team captain</p>
     <div class="teamgrid">${["h","a"].flatMap(s=>[1,2,3].map(n=>{const k=`${d.id}-${s}${n}`,t=S.teams[k];
       if(editing()) return `<div class="team ${s}"><label class="field">Team name<input id="tn-${k}" data-team="${k}" value="${esc(t.name)}"></label>
         ${t.players.map((p,i)=>`<label class="field">Player ${i+1}${i===0?" · Captain":""}<input id="tp-${k}-${i}" data-team="${k}" data-p="${i}" value="${esc(p)}"></label>`).join("")}</div>`;
       return `<div class="team ${s}"><b class="${s==="h"?"atp":"dural"}">${esc(t.name)}</b><ol>${t.players.map((p,i)=>`<li>${pn(k,i)}</li>`).join("")}</ol></div>`;
     })).join("")}</div></section>`).join("");
+}
+
+/* ----- CSV import ----- */
+let csvMsg="";
+const markTeam=k=>dirty.set("tn-"+k,["teams",k]);
+function csvCard(){
+  return `<section class="card"><h3>Import names from a spreadsheet</h3>
+    <p class="sub">One row per team: <b>Division, Club, Team, Team name, Player 1, Player 2, Player 3</b>. Player 1 is the captain. Division is 1 or 2, Club is ${esc(S.clubs.h.short)} or ${esc(S.clubs.a.short)}, Team is 1, 2 or 3. A heading row is fine, and blank cells keep the current name. Download the Excel template to start from the current names.</p>
+    <div class="actions"><button class="btn" data-act="csvTemplate">Download template (Excel)</button>
+      <label class="btn primary" style="cursor:pointer">Import Excel or CSV file<input type="file" id="csvFile" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none"></label></div>
+    <details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Or paste rows copied from Excel / Google Sheets</summary>
+      <textarea id="csvPaste" rows="6" style="width:100%;margin-top:8px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="1, ${esc(S.clubs.h.short)}, 1, ${esc(S.clubs.h.short)} Team 1, Jane Smith, Bob Jones, Ann Lee"></textarea>
+      <div class="actions" style="margin-top:6px"><button class="btn" data-act="csvPasteGo">Import pasted rows</button></div></details>
+    ${csvMsg?`<p class="banner ${/^Imported/.test(csvMsg)?"info":"warn"}" style="margin:10px 0 0;white-space:pre-line">${esc(csvMsg)}</p>`:""}</section>`;
+}
+function csvRows(text){
+  text=text.replace(/^\uFEFF/,"");
+  const first=text.split(/\r?\n/).find(l=>l.trim())||"";
+  const sep=first.includes("\t")?"\t":(first.split(";").length>first.split(",").length?";":",");
+  const rows=[];let row=[],cell="",q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++} else q=false } else cell+=ch; continue }
+    if(ch==='"'&&cell==="") q=true;
+    else if(ch===sep){row.push(cell);cell=""}
+    else if(ch==="\n"||ch==="\r"){ if(ch==="\r"&&text[i+1]==="\n")i++; row.push(cell);rows.push(row);row=[];cell="" }
+    else cell+=ch;
+  }
+  row.push(cell);rows.push(row);
+  return rows.map(r=>r.map(c=>c.trim())).filter(r=>r.some(c=>c));
+}
+function csvImport(text){importRows(csvRows(text))}
+function importRows(rows){
+  const errs=[], todo=[];
+  const low=x=>String(x||"").toLowerCase().trim();
+  const findDiv=c=>{const v=low(c);if(!v)return null;
+    return S.divisions.find((d,i)=>v===String(i+1)||v===d.id||v===low(d.name)||v===low(d.dupr)||v.replace(/\D/g,"")===String(i+1)&&!/\./.test(v))||null};
+  const findClub=c=>{const v=low(c);if(!v)return null;
+    for(const s of ["h","a"]){const cl=S.clubs[s];if(v===s||v===low(cl.short)||v===low(cl.name)||low(cl.name).startsWith(v)||v.startsWith(low(cl.short)))return s}
+    if(v==="home")return "h"; if(v==="away"||v==="visitor"||v==="visiting")return "a"; return null};
+  rows.forEach((r,n)=>{
+    const line=r.line||n+1;
+    if(!findClub(r[1])&&!(parseInt(r[2],10)>=1))return;   // heading, title or section row
+    const d=findDiv(r[0]), s=findClub(r[1]), t=parseInt(r[2],10);
+    if(!d){errs.push(`Row ${line}: division "${r[0]||""}" not recognised (use 1 or 2).`);return}
+    if(!s){errs.push(`Row ${line}: club "${r[1]||""}" not recognised (use ${S.clubs.h.short} or ${S.clubs.a.short}).`);return}
+    if(!(t>=1&&t<=3)){errs.push(`Row ${line}: team "${r[2]||""}" should be 1, 2 or 3.`);return}
+    todo.push({k:`${d.id}-${s}${t}`,name:r[3]||"",players:[r[4]||"",r[5]||"",r[6]||""],line});
+  });
+  const seen={};todo.forEach(x=>{if(seen[x.k])errs.push(`Row ${x.line}: same team as row ${seen[x.k]}.`);else seen[x.k]=x.line});
+  if(!todo.length&&!errs.length)errs.push("No rows found.");
+  if(errs.length){csvMsg="Nothing was imported. Fix these and try again:\n"+errs.slice(0,6).join("\n")+(errs.length>6?`\n…and ${errs.length-6} more.`:"");render();return}
+  let changed=0;
+  todo.forEach(x=>{const tm=S.teams[x.k], before=JSON.stringify(tm); if(x.name)tm.name=x.name; x.players.forEach((p,i)=>{if(p)tm.players[i]=p});
+    if(JSON.stringify(tm)!==before){markTeam(x.k);changed++}});
+  csvMsg=changed?`Imported ${todo.length} team${todo.length>1?"s":""}, ${changed} with new names. Check them below, then press "Save and update all screens".`:`Imported ${todo.length} team${todo.length>1?"s":""}. The names already match, so nothing changed.`;
+  render();
+}
+function csvTemplate(){
+  const q=v=>/[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v;
+  const lines=[["Division","Club","Team","Team name","Player 1 (captain)","Player 2","Player 3"]];
+  S.divisions.forEach((d,i)=>["h","a"].forEach(s=>[1,2,3].forEach(n=>{const t=S.teams[`${d.id}-${s}${n}`];lines.push([String(i+1),S.clubs[s].short,String(n),t.name,...t.players])})));
+  return "\uFEFF"+lines.map(l=>l.map(q).join(",")).join("\r\n")+"\r\n";
+}
+/* small built-in .xlsx writer and reader (no extra downloads needed) */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0};
+function zipStore(files){   // files: [[name, string]] -> Uint8Array (stored, no compression)
+  const enc=new TextEncoder(), parts=[], cen=[]; let off=0;
+  const u16=v=>[v&255,(v>>>8)&255], u32=v=>[v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255];
+  for(const [name,text] of files){const nm=enc.encode(name), data=enc.encode(text), crc=crc32(data);
+    const common=[...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(data.length),...u32(data.length),...u16(nm.length),...u16(0)];
+    const loc=new Uint8Array([...u32(0x04034b50),...common]);parts.push(loc,nm,data);
+    cen.push(new Uint8Array([...u32(0x02014b50),...u16(20),...common,...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nm);
+    off+=loc.length+nm.length+data.length}
+  const cenLen=cen.reduce((n,x)=>n+x.length,0);
+  const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cenLen),...u32(off),...u16(0)]);
+  const all=[...parts,...cen,end], out=new Uint8Array(all.reduce((n,x)=>n+x.length,0));let p=0;for(const x of all){out.set(x,p);p+=x.length}
+  return out;
+}
+async function zipRead(buf){   // -> {name: string}
+  const b=new Uint8Array(buf), v=new DataView(buf), out={}, dec=new TextDecoder();
+  let e=-1;for(let i=b.length-22;i>=Math.max(0,b.length-66000);i--)if(v.getUint32(i,true)===0x06054b50){e=i;break}
+  if(e<0)throw new Error("not a zip");
+  let p=v.getUint32(e+16,true);const n=v.getUint16(e+10,true);
+  for(let k=0;k<n;k++){
+    const method=v.getUint16(p+10,true), size=v.getUint32(p+20,true), nl=v.getUint16(p+28,true), xl=v.getUint16(p+30,true), cl=v.getUint16(p+32,true), lo=v.getUint32(p+42,true);
+    const name=dec.decode(b.subarray(p+46,p+46+nl)); p+=46+nl+xl+cl;
+    if(!/\.(xml|rels)$/.test(name))continue;
+    const start=lo+30+v.getUint16(lo+26,true)+v.getUint16(lo+28,true), raw=b.subarray(start,start+size);
+    if(method===0)out[name]=dec.decode(raw);
+    else if(method===8)out[name]=await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+  }
+  return out;
+}
+const xesc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+function xlsxTemplate(){
+  const e=E(), c=S.clubs, rows=[], merges=[];
+  const when=new Date(e.date+"T00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+  // style ids (see styles.xml below)
+  const band=(st,text,ht)=>{rows.push({ht,cells:[[text,st],...Array(6).fill(["",st])]});merges.push(rows.length)};
+  band(1,`${c.h.short.toUpperCase()} v ${c.a.short.toUpperCase()} INTERCLUB · TEAM NAMES`,34);
+  band(2,`${e.name} · ${when}${e.venue?" · "+e.venue:""}`,20);
+  band(3,"Type names in the white cells. Player 1 is the team captain. Leave Division, Club and Team as they are, then use Import on the website's Teams tab.",32);
+  rows.push({ht:22,cells:[["Division",4],["Club",4],["Team",4],["Team name",12],["Player 1 (captain)",5],["Player 2",12],["Player 3",12]]});
+  S.divisions.forEach((d,di)=>{
+    band(6,`${d.name.toUpperCase()} · ${d.dupr}`,22);
+    ["h","a"].forEach(s=>[1,2,3].forEach(n=>{const t=S.teams[`${d.id}-${s}${n}`],k=s==="h"?7:8;
+      rows.push({ht:20,cells:[[di+1,k,1],[c[s].short,k],[n,k,1],[t.name,9],[t.players[0],10],[t.players[1],11],[t.players[2],11]]})}));
+  });
+  const col=i=>"ABCDEFG"[i];
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetPr><tabColor rgb="FFCBE936"/><pageSetUpPr fitToPage="1"/></sheetPr>
+<sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="D6" sqref="D6"/></sheetView></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/>
+<cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="11" customWidth="1"/><col min="3" max="3" width="7" customWidth="1"/><col min="4" max="7" width="25" customWidth="1"/></cols>
+<sheetData>${rows.map((r,ri)=>`<row r="${ri+1}" ht="${r.ht}" customHeight="1">${r.cells.map(([v,st,num],ci)=>{const ref=col(ci)+(ri+1);
+    return num?`<c r="${ref}" s="${st}"><v>${v}</v></c>`:v===""?`<c r="${ref}" s="${st}"/>`:`<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`}).join("")}</row>`).join("")}</sheetData>
+<mergeCells count="${merges.length}">${merges.map(r=>`<mergeCell ref="A${r}:G${r}"/>`).join("")}</mergeCells>
+<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
+<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>
+</worksheet>`;
+  const F=(rgb,o="")=>`<font>${o}<sz val="${/sz/.test(o)?"":"11"}"/><color rgb="FF${rgb}"/><name val="Arial"/></font>`.replace('<sz val=""/>',"");
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="9">${F("000000")}${F("CBE936",'<b/><i/><sz val="16"/>')}${F("F4F7FC",'<sz val="10"/>')}${F("F7C520",'<sz val="10"/>')}${F("CBE936",'<b/><sz val="10"/>')}${F("F7C520",'<b/><sz val="10"/>')}${F("FFFFFF","<b/>")}${F("06122B","<b/>")}${F("06122B")}</fonts>
+<fills count="10"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${["06122B","3A2F08","0C1D40","132A57","1747C4","1F7A1C","EEF3FF","FFFFFF"].map(h=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${h}"/><bgColor indexed="64"/></patternFill></fill>`).join("")}</fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>${["left","right","top","bottom"].map(x=>`<${x} style="thin"><color rgb="FF9DB0D3"/></${x}>`).join("")}<diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="13">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="3" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1" indent="1"/></xf>
+<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="6" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="6" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="7" fillId="8" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="7" fillId="9" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="8" fillId="9" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" indent="1"/></xf>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  return zipStore([
+    ["[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Teams" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">Teams!$1:$4</definedName></definedNames></workbook>`],
+    ["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/styles.xml",styles],["xl/worksheets/sheet1.xml",sheet]]);
+}
+async function xlsxRows(buf){
+  const z=await zipRead(buf), P=new DOMParser(), NS="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const txt=el=>[...el.getElementsByTagNameNS(NS,"t")].map(t=>t.textContent).join("");
+  const shared=z["xl/sharedStrings.xml"]?[...P.parseFromString(z["xl/sharedStrings.xml"],"application/xml").getElementsByTagNameNS(NS,"si")].map(txt):[];
+  let path="xl/worksheets/sheet1.xml";
+  try{const wb=P.parseFromString(z["xl/workbook.xml"],"application/xml"), first=wb.getElementsByTagNameNS(NS,"sheet")[0];
+    const rid=first.getAttribute("r:id")||first.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id");
+    const rel=[...P.parseFromString(z["xl/_rels/workbook.xml.rels"],"application/xml").getElementsByTagName("Relationship")].find(r=>r.getAttribute("Id")===rid);
+    const t=rel.getAttribute("Target"); path=t.startsWith("/")?t.slice(1):"xl/"+t.replace(/^\.\//,"");}catch(e){}
+  if(!z[path]) path=Object.keys(z).find(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k));
+  if(!z[path]) throw new Error("no sheet");
+  const doc=P.parseFromString(z[path],"application/xml"), rows=[];
+  for(const row of doc.getElementsByTagNameNS(NS,"row")){
+    const r=Array(7).fill("");
+    for(const c of row.getElementsByTagNameNS(NS,"c")){
+      const ci=(c.getAttribute("r")||"").replace(/\d/g,"").split("").reduce((n,ch)=>n*26+ch.charCodeAt(0)-64,0)-1;
+      if(ci<0||ci>6)continue;
+      const t=c.getAttribute("t"), v=c.getElementsByTagNameNS(NS,"v")[0]?.textContent??"";
+      r[ci]=String(t==="s"?shared[+v]??"":t==="inlineStr"?txt(c):v).trim();
+    }
+    r.line=+row.getAttribute("r")||rows.length+1;
+    if(r.some(x=>x))rows.push(r);
+  }
+  return rows;
+}
+async function saveTemplate(){
+  const buf=xlsxTemplate();
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download="Interclub teams.xlsx";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),15000);
+  toast("Template downloaded. Fill it in, then import it.");
 }
 
 /* ----- setup ----- */
@@ -1206,6 +1389,8 @@ document.addEventListener("click",e=>{
   if(a==="forgot"){const em=$("#lg-email")?.value.trim();if(!em){loginMsg="Type your email first, then press Forgot password.";render();return}
     sendPasswordResetEmail(auth,em).then(()=>{loginMsg="Password reset email sent.";render()}).catch(()=>{loginMsg="Couldn't send the reset email. Check the address.";render()});return}
   if(a==="createEvent"){S=clone(DEFAULTS);ensure();setDoc(evRef,clone(S)).then(()=>toast("Event created.")).catch(e=>toast(e.code==="permission-denied"?"Your login isn't on the committee list.":"Couldn't create the event."));return}
+  if(a==="csvTemplate"){saveTemplate();return}
+  if(a==="csvPasteGo"){const v=$("#csvPaste")?.value||"";csvImport(v);return}
   if(a==="toggleCommittee"){committee=!committee;ls.set("committee",committee?"on":"off");render();return}
   if(a==="clearDemo"){S.scores={};S.demo=false;S.dbIdx={};save([...CTRL,["scores"],["demo"]]);return}
   if(a==="resetTimes"){S.roundStart={};delete S.pausedAt;save(CTRL);return}
@@ -1224,6 +1409,9 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("change",e=>{
   const el=e.target; if(el.dataset.court){S.courts[el.dataset.court]=+el.value;dirty.set(el.id,["courts",el.dataset.court]);render()}
+  if(el.id==="csvFile"&&el.files&&el.files[0]){const f=el.files[0];
+    (/\.xlsx$/i.test(f.name)?f.arrayBuffer().then(xlsxRows).then(importRows):f.text().then(csvImport))
+      .catch(()=>{csvMsg="Couldn't read that file. Use the Excel template (.xlsx) or a CSV file.";render()})}
 });
 
 let wake=null;
