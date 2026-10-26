@@ -1,15 +1,14 @@
-// Firebase settings for the interclub site (project: ATP Vs Dural).
+// Firebase settings for the ATP v Dural interclub site (project: ATP Events).
 // These values are not secret: the Firestore rules decide who can change scores.
- 
+
 export const firebaseConfig = {
-  apiKey: "AIzaSyAVw5VLCLa3PYcJcFYn_P5jDa2R1-89Wn8",
-  authDomain: "atp-vs-dural.firebaseapp.com",
-  projectId: "atp-vs-dural",
-  storageBucket: "atp-vs-dural.firebasestorage.app",
-  messagingSenderId: "581024981289",
-  appId: "1:581024981289:web:d112350459ef8f4c451738"
+  apiKey: "AIzaSyAykyvBpr-3H4_gCm--8tDN2IhV-2EFfj0",
+  authDomain: "atp-events.firebaseapp.com",
+  projectId: "atp-events",
+  storageBucket: "atp-events.firebasestorage.app",
+  messagingSenderId: "273200954086",
+  appId: "1:273200954086:web:5e60331be74192b6741927"
 };
- 
-// Name of this event in the database. For a future interclub, change this
-// (e.g. "interclub-2027") and press "Create the event" to start fresh.
+
+// This event's own record in the database. Each site uses a different name.
 export const EVENT_ID = "interclub-2026";
