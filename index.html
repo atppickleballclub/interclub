@@ -6,6 +6,13 @@
 <title>ATP vs Dural Interclub</title>
 <meta name="description" content="Live draw, courts, scores and standings for the ATP v Dural pickleball interclub challenge.">
 <meta name="theme-color" content="#06122b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Interclub">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600&display=swap">
 <style>
@@ -295,6 +302,9 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .loginbar b{color:var(--ink)}
 .btn.ghostlink{background:none;border-color:transparent;color:var(--muted);text-decoration:underline}
 .loginform{display:grid;gap:10px;width:min(100%,360px)}
+/* install as an app */
+.installbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;margin:28px 0 -8px;text-align:center}
+.installbar img{width:28px;height:28px;border-radius:7px}
 
 </style>
 </head>
@@ -515,7 +525,7 @@ function header(st){
     </div>
     <nav class="tabs" role="tablist">
       ${tabs.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${tab===k}">${l}</button>`).join("")}
-      <button class="tvbtn" data-act="tv">TV display ▸</button>
+      ${canControl()?`<button class="tvbtn" data-act="tv">TV display ▸</button>`:""}
     </nav>
   </div></header>`;
 }
@@ -1246,6 +1256,16 @@ function loginBox(){
     <div class="actions"><button class="btn primary" type="submit">Log in</button><button class="btn" type="button" data-act="forgot">Forgot password</button><button class="btn" type="button" data-act="hideLogin">Cancel</button></div>
     ${loginMsg?`<p class="sub" style="margin:0">${esc(loginMsg)}</p>`:""}</form></footer>`;
 }
+let installEvt=null, installHelp=false;
+const standalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;render()});
+window.addEventListener("appinstalled",()=>{installEvt=null;toast("Installed. Open Interclub from your home screen or apps.")});
+function installBar(){
+  if(standalone()||isTV()||(!installEvt&&!isIOS)) return "";
+  if(installHelp&&isIOS) return `<div class="installbar"><img src="icon-192.png" alt=""><span>On iPhone or iPad: tap the <b>Share</b> button <b>⬆︎</b> in Safari, then <b>Add to Home Screen</b>.</span><button class="btn" data-act="installClose">OK</button></div>`;
+  return `<div class="installbar"><img src="icon-192.png" alt=""><span>Get the draw and live scores as an app on this device.</span><button class="btn primary" data-act="install">Install app</button></div>`;
+}
 function render(){
   const app=$("#app");
   if(configError){app.innerHTML=`<main><div class="wrap"><div class="card"><h3>Almost there</h3><p>${esc(configError)}</p></div></div></main>`;return}
@@ -1262,7 +1282,7 @@ function render(){
   if(canEdit) banners+=`<div class="banner info"><span>${committee?"Committee mode: you can enter scores, courts and names. Everyone else sees a read-only page.":"Viewing as a player. Turn committee mode on to edit."}</span><button class="btn" data-act="toggleCommittee">${committee?"View as player":"Committee mode"}</button></div>`;
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
   const body=tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="setup"?setupTab():drawTab();
-  app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
+  app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${installBar()}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
 }
 function saveBar(){
   if(!editing()||!dirty.size) return "";
@@ -1383,6 +1403,8 @@ document.addEventListener("click",e=>{
     if(t.dataset.armed){timerRestartGame();return}
     t.dataset.armed="1";t.textContent="Tap again to restart";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="discard"){S=clone(SERVER||DEFAULTS);ensure();dirty.clear();render();return}
+  if(a==="install"){ if(installEvt){const ev=installEvt;ev.prompt();ev.userChoice.finally(()=>{installEvt=null;render()})} else {installHelp=true;render()} return}
+  if(a==="installClose"){installHelp=false;render();return}
   if(a==="showLogin"){showLogin=true;loginMsg="";render();setTimeout(()=>$("#lg-email")?.focus(),0);return}
   if(a==="hideLogin"){showLogin=false;render();return}
   if(a==="logout"){signOut(auth);return}
@@ -1442,6 +1464,7 @@ setInterval(()=>{
 onHash();
 if(toastMsg){clearTimeout(toastTimer);toastTimer=setTimeout(()=>{toastMsg="";const t=$(".toast");t&&t.remove()},5000)}
 startFirebase();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 
 </script>
 </body>
