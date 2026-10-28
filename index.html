@@ -114,10 +114,21 @@ main .wrap{padding-block:20px 120px;display:grid;gap:22px}
 .cap{display:inline-grid;place-items:center;width:1.3em;height:1.3em;border-radius:50%;background:var(--gold);color:var(--on-lime);font:800 .68em/1 var(--body);font-style:normal;margin-left:.4em;vertical-align:.12em}
 .score{font-family:var(--display);font-size:22px;font-weight:700;display:flex;gap:6px;align-items:center;justify-content:center;min-width:76px}
 .score .w{color:var(--ink)} .score .l{color:var(--muted);font-weight:500}
+.score .win-h,.score .win-a{border-radius:6px;padding:0 7px;min-width:1.6em;text-align:center}
+.score .win-h{color:var(--atp);background:var(--atp-soft);box-shadow:inset 0 0 0 1px var(--atp)}
+.score .win-a{color:var(--dural);background:var(--dural-soft);box-shadow:inset 0 0 0 1px var(--dural)}
 .score .blank{color:var(--muted);font-weight:500;font-size:16px}
 .score input{width:46px;text-align:center;font-family:var(--display);font-size:20px;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--sunk);padding:2px}
 .score input.changed{border-color:var(--warn);background:var(--warn-soft)}
-@media (max-width:520px){
+/* narrow cards (phones, and the 3-across grid on computers): game label on top, each pair on its own line, score on the right */
+.match{container-type:inline-size}
+.game.ghead{display:none}
+@container (max-width:480px){
+  .game.ghead{display:grid;grid-template-areas:". s";padding-top:6px;padding-bottom:0;border-top:0}
+  .game.ghead .score{font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .game.ghead .score span:not(.dash){width:46px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .game.ghead .dash{visibility:hidden}
+  .mhead + .game.ghead + .game{border-top:0}
   .game{grid-template-columns:1fr auto;grid-template-areas:"t t" "h s" "a s"}
   .game .t{grid-area:t} .game .home{grid-area:h} .game .away{grid-area:a;text-align:left} .game .score{grid-area:s}
 }
@@ -174,8 +185,10 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .tvclock .now{font-size:calc(2.4*var(--u));color:var(--muted)}
 .tvbody{display:grid;grid-template-columns:1.75fr 1fr;gap:calc(1.4*var(--u));min-height:0}
 .tvphase{display:flex;align-items:baseline;justify-content:space-between;gap:calc(1*var(--u));background:var(--surface);border:1px solid var(--line);border-radius:calc(.8*var(--u));padding:calc(.9*var(--u)) calc(1.4*var(--u));margin-bottom:calc(1.2*var(--u))}
-.tvphase .lbl{font-family:var(--display);font-size:calc(2.4*var(--u));font-weight:800;font-style:italic;text-transform:uppercase}
-.tvphase .lbl small{display:block;font-family:var(--body);font-size:calc(1*var(--u));color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.12em}
+.tvphase .what{font-family:var(--display);font-size:calc(2.8*var(--u));font-weight:800;font-style:italic;text-transform:uppercase;line-height:1.05;min-width:0}
+.tvphase .clock{display:flex;align-items:center;gap:calc(1*var(--u));flex:none}
+.tvphase .clock small{font-family:var(--body);font-size:calc(1.1*var(--u));color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.12em;text-align:right;line-height:1.2;max-width:calc(9*var(--u))}
+.tvphase .clock .msg{font-family:var(--display);font-size:calc(2.4*var(--u));font-weight:800;font-style:italic;text-transform:uppercase;color:var(--warn)}
 .tvphase .cd{font-family:var(--display);font-size:calc(5.2*var(--u));font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
 .tvphase.game .cd{color:var(--live)} .tvphase.gap .cd,.tvphase.brk .cd,.tvphase.pre .cd{color:var(--warn)}
 .tvphase.low .cd{color:var(--red)}
@@ -185,6 +198,13 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .program span{display:flex;gap:6px;align-items:baseline;white-space:nowrap}
 .program .ptitle{font-family:var(--display);font-style:italic;text-transform:uppercase;font-weight:800;color:var(--ink);font-size:16px}
 .program b{color:var(--lime);font-family:var(--display);font-size:16px}
+@media (max-width:600px){
+  /* phones: a tidy timetable list, times in one column and events in the next */
+  .program{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;padding:12px 16px;font-size:15px}
+  .program .ptitle{grid-column:1/-1;margin-bottom:2px}
+  .program span:not(.ptitle){display:contents}
+  .program b{text-align:right;font-size:17px}
+}
 .dbrules{margin:0;color:var(--muted);font-size:14px;max-width:70ch}
 .dbrot{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px 12px;border-top:1px solid var(--line)}
 .dbrot ol{margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.5}
@@ -192,6 +212,27 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .tvcourts.db{grid-template-columns:1fr 1fr;grid-template-rows:auto}
 .tvbody.full{grid-template-columns:1fr}
 .tvbody.full .tvdb .dbscore{font-size:calc(12*var(--u))}
+/* round view: courts use the full width, so the names can be bigger */
+/* round view: each court shows ATP on the left, Dural on the right */
+.tvbody.full .tvm{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;align-content:stretch}
+.tvbody.full .tvm .ct{align-items:center}
+.tvbody.full .tvm .ct b{font-size:calc(2.6*var(--u))}
+.tvbody.full .tvm .ct>span{font-size:calc(1.05*var(--u))}
+.tvbody.full .tvm .gw b span{font-size:inherit;letter-spacing:0;color:inherit}
+.tvbody.full .tvm .gw b .atp{color:var(--atp)} .tvbody.full .tvm .gw b .dural{color:var(--dural)}
+.tvbody.full .tvm .gw{display:flex;align-items:baseline;gap:calc(.5*var(--u));flex:none}
+.tvbody.full .tvm .gw small{font-size:calc(1*var(--u));color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.tvbody.full .tvm .gw b{font-family:var(--display);font-size:calc(2.6*var(--u));line-height:1;color:var(--ink)}
+.tvbody.full .tvm .mup{align-self:center;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:start;gap:calc(.8*var(--u))}
+.tvbody.full .tvm .side{gap:calc(.25*var(--u));line-height:1.15;min-width:0;overflow:hidden}
+.tvbody.full .tvm .side.r{text-align:right}
+.tvbody.full .tvm .side .tn{font-size:calc(2.1*var(--kt,1)*var(--u));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tvbody.full .tvm .side .pn{font-size:calc(1.7*var(--k,1)*var(--u));font-weight:500}
+.tvbody.full .tvm .vs{align-self:center;font-size:calc(1.3*var(--u));color:var(--muted);font-weight:700;letter-spacing:0}
+.tvbody.full .tvm .gl{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:calc(.8*var(--u));font-size:calc(1.1*min(var(--k,1),1)*var(--u))}
+.tvbody.full .tvm .gl>span{min-width:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tvbody.full .tvm .gl .r{text-align:right}
+.tvbody.full .tvm .gl small{font-size:calc(1*var(--u));text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:var(--muted)}
 .tvbody.full .tvdb .oncourt b{font-size:calc(2.4*var(--u))}
 .tvbody.full .tvdb .oncourt small{font-size:calc(1.4*var(--u))}
 .tvdb{align-content:start;gap:calc(.8*var(--u))}
@@ -274,7 +315,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .tvbody{min-height:0;overflow:hidden}
 .tvmain{display:grid;grid-template-rows:auto 1fr;gap:calc(1*var(--u));min-height:0}
 .tvphase{margin-bottom:0;align-items:center;padding:calc(.6*var(--u)) calc(1.4*var(--u))}
-.tvphase .lbl{font-size:calc(2*var(--u))}
+.tvphase .what{font-size:calc(2.6*var(--u))}
 .tvphase .cd{font-size:calc(4.2*var(--u))}
 .tvcourts{grid-template-rows:1fr 1fr;min-height:0}
 .tvc{gap:calc(.35*var(--u));padding:calc(.8*var(--u)) calc(1*var(--u));align-content:space-between;min-height:0;overflow:hidden}
@@ -369,6 +410,7 @@ function matches(){
 const gkey=(mk,g)=>`${mk}-g${g}`;
 const sc=(mk,g)=>{const v=S.scores[gkey(mk,g)];return Array.isArray(v)&&v[0]!=null&&v[1]!=null&&v[0]!==""&&v[1]!==""?[+v[0],+v[1]]:null};
 const pairNames=(tk,g)=>{const t=S.teams[tk];const[p,q]=PAIRS[g-1];return [t.players[p],t.players[q]]};
+const pnp=(tk,i)=>esc(S.teams[tk].players[i]);   // name without the captain badge (dreambreakers)
 const pn=(tk,i)=>`${esc(S.teams[tk].players[i])}${i===0?`<span class="cap" title="Captain">C</span>`:""}`;
 const pairHTML=(tk,g)=>{const[p,q]=PAIRS[g-1];return `<span class="pn">${pn(tk,p)}</span><span class="pn">${pn(tk,q)}</span>`};
 const pairLabel=g=>{const[p,q]=PAIRS[g-1];return `${p+1} & ${q+1}`};
@@ -439,17 +481,20 @@ function phase(t=nowT()){
   const st=roundStarts(), gm=E().gameMin, gp=E().gapMin, rl=roundLen();
   const dbManual=S.roundStart?.[DB];
   if(dbManual!=null&&t>=dbManual) return dbDone()?{kind:"done",round:DB,game:1}:{kind:"db",round:DB,game:1};
-  if(t<st[0]) return {kind:"pre",round:1,game:1,until:st[0]};
-  for(let r=0;r<ROUNDS;r++){
-    const rs=st[r], re=rs+rl*60000;
-    if(t<rs) return {kind:"brk",round:r+1,game:1,until:rs};
-    if(t<re){
-      const off=(t-rs)/60000; let g=Math.floor(off/(gm+gp)); if(g>2)g=2;
-      const into=off-g*(gm+gp);
-      if(into<gm) return {kind:"game",round:r+1,game:g+1,until:rs+(g*(gm+gp)+gm)*60000};
-      return {kind:"gap",round:r+1,game:g+2,until:rs+((g+1)*(gm+gp))*60000};
-    }
+  // nothing happens until a committee member starts a round (usually round 1)
+  const started=[1,2,3].some(r=>S.roundStart?.[r]!=null);
+  if(!started) return {kind:"pre",round:1,game:1,until:st[0]};
+  // the round in play is the latest one whose start has passed, so "Start round 2 now" works even if round 1 is still on the clock
+  let r=-1; for(let i=0;i<ROUNDS;i++) if(t>=st[i]) r=i;
+  if(r<0) return {kind:"pre",round:1,game:1,until:st[0]};
+  const rs=st[r], re=rs+rl*60000;
+  if(t<re){
+    const off=(t-rs)/60000; let g=Math.floor(off/(gm+gp)); if(g>2)g=2;
+    const into=off-g*(gm+gp);
+    if(into<gm) return {kind:"game",round:r+1,game:g+1,until:rs+(g*(gm+gp)+gm)*60000};
+    return {kind:"gap",round:r+1,game:g+2,until:rs+((g+1)*(gm+gp))*60000};
   }
+  if(r<ROUNDS-1) return {kind:"brk",round:r+2,game:1,until:st[r+1]};
   const ds=dbStart();
   if(t<ds) return {kind:"brk",round:DB,game:1,until:ds};
   if(!dbDone()) return {kind:"db",round:DB,game:1};
@@ -520,7 +565,6 @@ function header(st){
         <div class="dash">–</div>
         <div class="club dural"><b class="num">${st.club.a.w}</b><span>${esc(c.a.short)}</span></div>
         <span class="logo a" role="img" aria-label="${esc(c.a.name)} logo"></span>
-        <div class="note">games won${st.club.h.d?` · ${st.club.h.d} drawn`:""}</div>
       </div>
     </div>
     <nav class="tabs" role="tablist">
@@ -540,7 +584,7 @@ function scoreCell(m,g){
   }
   if(!s) return `<div class="score"><span class="blank">vs</span></div>`;
   const [a,b]=s;
-  return `<div class="score num"><span class="${a>=b?"w":"l"}">${a}</span><span class="muted">–</span><span class="${b>=a?"w":"l"}">${b}</span></div>`;
+  return `<div class="score num"><span class="${a>b?"w win-h":a===b?"w":"l"}">${a}</span><span class="muted">–</span><span class="${b>a?"w win-a":a===b?"w":"l"}">${b}</span></div>`;
 }
 function matchCard(m,p){
   let hw=0,aw=0,n=0;
@@ -552,10 +596,11 @@ function matchCard(m,p){
       <div class="teams"><span class="atp">${esc(S.teams[m.h].name)}</span><span class="v">v</span><span class="dural">${esc(S.teams[m.a].name)}</span></div>
       ${n?`<span class="tie num" title="Games won"><span class="atp">${hw}</span><span class="muted">–</span><span class="dural">${aw}</span></span>`:""}
     </div>
+    ${editing()?`<div class="game ghead" aria-hidden="true"><div class="score"><span class="atp">${esc(S.clubs.h.short)}</span><span class="dash">–</span><span class="dural">${esc(S.clubs.a.short)}</span></div></div>`:""}
     ${[1,2,3].map(g=>{
       const cur=p.kind==="game"&&p.round===m.r&&p.game===g;
       return `<div class="game${cur?" cur":""}">
-        <div class="t"><b>Game ${g}</b>Pair ${pairLabel(g)}</div>
+        <div class="t"><b>Game ${g}</b></div>
         <div class="pair home">${pairHTML(m.h,g)}</div>
         ${scoreCell(m,g)}
         <div class="pair away">${pairHTML(m.a,g)}</div>
@@ -571,7 +616,7 @@ function programHTML(){
 function dbCard(d,p){
   const k=`db-${d.id}`, ct=S.courts[k], live=p.kind==="db";
   const courtSel=editing()?`<select id="c-${k}" data-court="${k}" aria-label="Court">${Array.from({length:Math.max(12,ct)},(_,i)=>`<option value="${i+1}"${i+1==ct?" selected":""}>Ct ${i+1}</option>`).join("")}</select>`:`Ct ${ct}`;
-  const list=side=>`<ol>${dbOrder(d,side).map(([tk,i])=>`<li>${pn(tk,i)} <small>${esc(S.teams[tk].name)}</small></li>`).join("")}</ol>`;
+  const list=side=>`<ol>${dbOrder(d,side).map(([tk,i])=>`<li>${pnp(tk,i)}</li>`).join("")}</ol>`;
   return `<article class="match${live?" isLive":""}">
     <div class="mhead"><span class="court">${courtSel}</span><div class="teams">${esc(d.name)} · ${esc(d.dupr)}</div></div>
     <div class="game"><div class="t"><b>Game</b>To 25</div><div class="pair home"><span class="pn">${esc(S.clubs.h.short)}</span></div>${(()=>{const i=dbInfo(d);return `<div class="score num"><span class="${i.h>=i.a?"w":"l"}">${i.h}</span><span class="muted">–</span><span class="${i.a>=i.h?"w":"l"}">${i.a}</span></div>`})()}<div class="pair away"><span class="pn">${esc(S.clubs.a.short)}</span></div></div>
@@ -619,8 +664,8 @@ function teamTable(st,d,compact){
 function standingsTab(){
   const st=stats(), c=S.clubs;
   const ct=(s,cls)=>`<div class="clubtot ${s}"><div class="top-row"><span class="logo ${s}" role="img" aria-label="${esc(c[s].name)} logo"></span><div class="eyebrow">${esc(c[s].name)}</div></div><div class="big num ${cls}">${st.club[s].w}</div>
-    <div class="muted num">games won · ${S.divisions.map(d=>`${esc(d.name)}: ${st.club[s].byDiv[d.id]}`).join(" · ")}</div>
-    <div class="muted num">Points ${st.club[s].pf} for, ${st.club[s].pa} against</div></div>`;
+    <div class="muted num">Games won · ${S.divisions.map(d=>`${esc(d.name)}: ${st.club[s].byDiv[d.id]}`).join(" · ")}</div>
+    <div class="muted num">Points ${st.club[s].pf}</div></div>`;
   const dbRes=`<section class="card"><h3>Dreambreaker</h3><p class="sub">One game per division, first to 25. Shown separately from the games-won totals.</p><div class="tbl"><table><tbody>${S.divisions.map(d=>{const i=dbInfo(d), started=i.h+i.a>0;
     return `<tr><td>${esc(d.name)} <span class="muted">${esc(d.dupr)}</span></td><td>${started?`<b class="atp">${i.h}</b> – <b class="dural">${i.a}</b>`:`<span class="muted">–</span>`}</td><td>${i.over?(i.winner==="h"?`<b class="atp">${esc(c.h.short)} win</b>`:`<b class="dural">${esc(c.a.short)} win</b>`):started?"In play":"Not played yet"}</td></tr>`}).join("")}</tbody></table></div></section>`;
   return `<div class="actions"><button class="btn primary" data-act="pdf" data-kind="results">⬇ Download final results (PDF)</button><span class="muted" style="font-size:13px">Club totals, dreambreakers, team and player tables, and every score</span></div>
@@ -628,7 +673,7 @@ function standingsTab(){
   <section class="grid2">${S.divisions.map(d=>`<div class="card"><h3>${esc(d.name)}</h3><p class="sub">${esc(d.dupr)} · ranked by games won, then points difference</p>${teamTable(st,d,false)}</div>`).join("")}</section>
   <section class="grid2">${S.divisions.map(d=>{
     const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
-    return `<div class="card"><h3>${esc(d.name)} players</h3><p class="sub">Each player plays two games a round, six in total</p><div class="tbl"><table><thead><tr><th>Player</th><th>Team</th><th>W</th><th>L</th><th>+/–</th></tr></thead><tbody>
+    return `<div class="card"><h3>${esc(d.name)} players</h3><div class="tbl"><table><thead><tr><th>Player</th><th style="text-align:left">Team</th><th>W</th><th>L</th><th>+/–</th></tr></thead><tbody>
     ${rows.map(p=>`<tr><td><span class="dot" style="background:var(--${sideOf(p.tk)==="h"?"atp":"dural"})"></span>${pn(p.tk,p.i)}</td><td style="text-align:left" class="muted">${esc(S.teams[p.tk].name)}</td><td>${p.w}</td><td>${p.l}</td><td>${sgn(p.pf-p.pa)}</td></tr>`).join("")}
     </tbody></table></div></div>`}).join("")}</section>`;
 }
@@ -839,9 +884,9 @@ function setupTab(){
     ${f("cl-a","Visiting club","clubs.a.name",c.a.name)}${f("cl-as","Visiting short name","clubs.a.short",c.a.short)}
     ${S.divisions.map((d,i)=>f(`dv-${i}`,`${esc(d.name)} rating band`,`divisions.${i}.dupr`,d.dupr)).join("")}
   </div><p class="sub" style="margin-top:12px">Team and player names are edited on the Teams tab.</p></section>
-  <section class="card"><h3>Round timing</h3><p class="sub">Use "Start round now" on the Draw tab when play actually begins; later rounds move with it.</p>
+  <section class="card"><h3>Round timing</h3><p class="sub">The timer waits until a committee member presses "Start round 1 now" (on the timer bar or the Draw tab). Later rounds follow on automatically from that start.</p>
     <div class="actions">${[1,2,3].map(r=>`<span class="muted">Round ${r}: <b class="num" style="color:var(--ink)">${fmtT(roundStarts()[r-1])}</b>${S.roundStart?.[r]!=null?" (started manually)":""}</span>`).join(" · ")}
-    <button class="btn" data-act="resetTimes">Return to planned times</button></div></section>
+    <button class="btn" data-act="resetTimes">Reset timer (wait for Round 1 start)</button></div></section>
   <section class="card"><h3>Printable sheets</h3><p class="sub">A4 PDFs built from the current names, courts and times. Print them after the teams are entered.</p>
     <div class="actions">
       <button class="btn primary" data-act="pdf" data-kind="all">All sheets (one PDF)</button>
@@ -851,14 +896,34 @@ function setupTab(){
       <button class="btn" data-act="pdf" data-kind="results">Final results</button>
     </div></section>
   <section class="card"><h3>Scores</h3><p class="sub">${Object.keys(S.scores).length} game scores recorded.</p>
-    <div class="actions"><button class="btn danger" data-act="clearScores">Clear all scores</button><span class="muted" id="clearConfirm"></span></div></section>`;
+    <div class="actions"><button class="btn danger" data-act="clearScores">Clear all scores</button><span class="muted" id="clearConfirm"></span></div>
+    ${undoBox()}</section>`;
+}
+
+/* ----- clear scores, with one level of undo (kept in the saved data so any screen can undo) ----- */
+function clearAllScores(){
+  const n=Object.keys(S.scores||{}).length;
+  if(n) S.scoresUndo={scores:JSON.parse(JSON.stringify(S.scores)),demo:!!S.demo,dbIdx:JSON.parse(JSON.stringify(S.dbIdx||{})),at:Date.now(),n};
+  S.scores={};S.demo=false;S.dbIdx={};save([...CTRL,["scores"],["demo"],["scoresUndo"]]);
+}
+function undoClear(){
+  const u=S.scoresUndo; if(!u)return;
+  S.scores=u.scores;S.demo=u.demo;S.dbIdx=u.dbIdx;delete S.scoresUndo;save([...CTRL,["scores"],["demo"],["scoresUndo"]]);
+}
+function undoBox(){
+  const u=S.scoresUndo; if(!u) return "";
+  return `<div class="banner warn" style="margin:12px 0 0"><span>${u.n} score${u.n===1?"":"s"} cleared at ${fmtT(u.at)}.</span><button class="btn" data-act="undoClear">↶ Undo clear</button></div>`;
 }
 
 /* ----- timer text ----- */
 function phaseInfo(st){
   const p=phase(), c=S.clubs, now=nowT();
   let lbl="",sub="",cd="",cls=p.kind;
-  if(p.kind==="pre"){const br=timeOn(E().briefing);sub=now<br?`Warm-up · briefing & welcome at ${fmtT(br)}`:"Briefing & welcome";lbl=`Round 1 starts ${fmtT(p.until)}`;cd=mmss(p.until-now)}
+  if(p.kind==="pre"){const br=timeOn(E().briefing);
+    if(now<br){sub=`Warm-up · briefing & welcome at ${fmtT(br)}`;lbl=`Round 1 starts ${fmtT(p.until)}`}
+    else if(now<p.until){sub="Briefing & welcome";lbl=`Round 1 starts ${fmtT(p.until)}`}
+    else {sub="Briefing & welcome";lbl="Round 1 starting soon"}
+    cd=""}
   else if(p.kind==="game"){sub=`Round ${p.round} · game ${p.game} of 3`;lbl="Time remaining";cd=mmss(p.until-now);if(p.until-now<60000)cls+=" low"}
   else if(p.kind==="gap"){sub=`Round ${p.round} · changeover`;lbl=`Game ${p.game} starts in`;cd=mmss(p.until-now)}
   else if(p.kind==="brk"&&p.round===DB){sub="Break before the dreambreaker";lbl="Dreambreaker starts in";cd=mmss(p.until-now)}
@@ -904,19 +969,38 @@ function timerSkip(){
   delete S.pausedAt; save(CTRL);
 }
 function timerControls(){
-  const i=phaseInfo(), paused=S.pausedAt!=null, done=i.p.kind==="done"||i.p.kind==="db";
+  const i=phaseInfo(), paused=S.pausedAt!=null, done=i.p.kind==="done"||i.p.kind==="db", idle=done||i.p.kind==="pre";
   const what=i.p.kind==="game"||i.p.kind==="gap"?`game ${i.p.game}`:i.p.round===DB?"dreambreaker":`round ${i.p.round}`;
   return `<div class="timerbar ${i.cls}">
     <div class="tinfo"><span class="eyebrow">${esc(i.sub)}</span><b>${esc(i.lbl)}</b></div>
     <div class="tcd num" id="ctlcd">${i.cd}</div>
     <div class="actions">
-      ${paused?`<button class="btn primary" data-act="tResume">▶ Resume timer</button>`:`<button class="btn" data-act="tPause"${done?" disabled":""}>❚❚ Pause timer</button>`}
-      <button class="btn" data-act="tRestart"${done?" disabled":""}>↺ Restart ${what}</button>
-      ${done?"":`<button class="btn" data-act="tSkip">⏭ ${esc(skipLabel(i.p))}</button>`}
+      ${paused?`<button class="btn primary" data-act="tResume">▶ Resume timer</button>`:`<button class="btn" data-act="tPause"${idle?" disabled":""}>❚❚ Pause timer</button>`}
+      <button class="btn" data-act="tRestart"${idle?" disabled":""}>↺ Restart ${what}</button>
+      ${done?"":i.p.kind==="pre"?`<button class="btn primary" data-act="tSkip">▶ ${esc(skipLabel(i.p))}</button>`:`<button class="btn" data-act="tSkip">⏭ ${esc(skipLabel(i.p))}</button>`}
     </div></div>`;
 }
 
 /* ----- TV ----- */
+/* grow the court text to fill the cards on big screens, shrink it if long names don't fit */
+function fitTV(){
+  const box=document.querySelector(".tvcourts:not(.db)"); if(!box) return;
+  const cards=[...box.querySelectorAll(".tvm")]; if(!cards.length) return;
+  const tns=[...box.querySelectorAll(".tvm .tn")];
+  const sides=[...box.querySelectorAll(".tvm .side")];
+  const over=()=>cards.some(c=>c.scrollHeight>c.clientHeight+1||c.scrollWidth>c.clientWidth+1)||sides.some(x=>x.scrollWidth>x.clientWidth+1);
+  const step=(name,from,bad)=>{let k=from;box.style.setProperty(name,k);while(k>0.6&&bad()){k=Math.round((k-0.05)*100)/100;box.style.setProperty(name,k)}};
+  const cut=()=>tns.some(t=>t.scrollWidth>t.clientWidth+1);
+  const pns=[...box.querySelectorAll(".tvm .pn")];
+  const wraps=()=>pns.some(x=>x.offsetHeight>parseFloat(getComputedStyle(x).fontSize)*1.6);
+  // player names as big as fit in the card, ideally each on one line; team names as big as fit on one line at that size
+  const fit=(minK,oneLine)=>{for(let k=1.6;k>=minK;k=Math.round((k-0.05)*100)/100){
+    box.style.setProperty("--k",k); step("--kt",1.4,cut);
+    if(!over()&&!(oneLine&&wraps())) return true;
+  } return false};
+  if(!fit(0.85,true)) fit(0.6,false);
+}
+window.addEventListener("resize",()=>{if(isTV())fitTV()});
 function tvView(){
   const st=stats(), c=S.clubs;
   const {p,lbl,sub,cd,cls}=phaseInfo(st);
@@ -931,18 +1015,24 @@ function tvView(){
     return `<div class="tvc tvdb${al.swapping?" swapping":""}${al.warn?" warn":""}${i.over?" over":""}"><div class="ct"><b>Court ${S.courts[k]}</b><span>Dreambreaker · ${esc(d.dupr)}</span></div>
       <div class="dbscore num"><span class="atp">${i.h}</span><span class="dash">–</span><span class="dural">${i.a}</span></div>
       <div class="dbstat">${status}</div>
-      <div class="oncourt"><div><span class="lab atp">${esc(c.h.short)} on court</span><b>${pn(...h1)} &amp; ${pn(...h2)}</b>${i.frozen||i.over?"":`<small class="next">${al.warn?"Get ready":"Next"}: ${pn(...nh1)} &amp; ${pn(...nh2)}</small>`}</div>
-        <div><span class="lab dural">${esc(c.a.short)} on court</span><b>${pn(...a1)} &amp; ${pn(...a2)}</b>${i.frozen||i.over?"":`<small class="next">${al.warn?"Get ready":"Next"}: ${pn(...na1)} &amp; ${pn(...na2)}</small>`}</div></div>
+      <div class="oncourt"><div><span class="lab atp">${esc(c.h.short)} on court</span><b>${pnp(...h1)} &amp; ${pnp(...h2)}</b>${i.frozen||i.over?"":`<small class="next">${al.warn?"Get ready":"Next"}: ${pnp(...nh1)} &amp; ${pnp(...nh2)}</small>`}</div>
+        <div><span class="lab dural">${esc(c.a.short)} on court</span><b>${pnp(...a1)} &amp; ${pnp(...a2)}</b>${i.frozen||i.over?"":`<small class="next">${al.warn?"Get ready":"Next"}: ${pnp(...na1)} &amp; ${pnp(...na2)}</small>`}</div></div>
       <div class="gl"><span>Rally scoring · pairs swap every ${DB_EVERY} points until ${DB_FREEZE} · first to ${DB_TO}</span></div></div>`}).join(""):"";
   const courts=dbCards+ms.map(m=>{
     const [hp,hq]=PAIRS[showG-1];
     let hw=0,aw=0;for(let g=1;g<=3;g++){const s=sc(m.key,g);if(s){if(s[0]>s[1])hw++;else if(s[1]>s[0])aw++}}
-    const tag=p.kind==="game"?"Playing":p.kind==="done"?"Final game":"Up next";
-    return `<div class="tvc"><div class="ct"><b>Court ${m.court}</b><span>${esc(m.div.dupr)}</span></div>
-      <div class="side"><span class="tn atp">${esc(S.teams[m.h].name)}</span><span class="pn">${pn(m.h,hp)} &amp; ${pn(m.h,hq)}</span></div>
-      <div class="vs">vs</div>
-      <div class="side"><span class="tn dural">${esc(S.teams[m.a].name)}</span><span class="pn">${pn(m.a,hp)} &amp; ${pn(m.a,hq)}</span></div>
-      <div class="gl"><span>${tag}: game ${showG} · pair ${pairLabel(showG)}</span><span>Games <b class="num"><span class="atp">${hw}</span>–<span class="dural">${aw}</span></b></span></div></div>`;
+    // keeps the captain badge on the same line as the surname
+    const pnk=(tk,i)=>{const n=String(S.teams[tk].players[i]??""),j=n.lastIndexOf(" ");if(i!==0)return esc(n);
+      return `${j>0?esc(n.slice(0,j+1)):""}<span style="white-space:nowrap">${esc(j>0?n.slice(j+1):n)}<span class="cap" title="Captain">C</span></span>`};
+    const first=n=>{const w=String(n||"").trim().split(/\s+/);return /^player$/i.test(w[0])?n:w[0]};   // first names keep the "next" line short
+    const nx=showG<3?PAIRS[showG]:null, th=S.teams[m.h].players, ta=S.teams[m.a].players;
+    return `<div class="tvc tvm"><div class="ct"><b>Court ${m.court}</b><span>${esc(m.div.dupr)}</span></div>
+      <div class="mup">
+        <div class="side"><span class="tn atp">${esc(S.teams[m.h].name)}</span><span class="pn">${pnk(m.h,hp)}</span><span class="pn">${pnk(m.h,hq)}</span></div>
+        <div class="vs">v</div>
+        <div class="side r"><span class="tn dural">${esc(S.teams[m.a].name)}</span><span class="pn">${pnk(m.a,hp)}</span><span class="pn">${pnk(m.a,hq)}</span></div>
+      </div>
+      <div class="gl">${nx?`<span class="atp">${esc(first(th[nx[0]]))} &amp; ${esc(first(th[nx[1]]))}</span><small>Next</small><span class="dural r">${esc(first(ta[nx[0]]))} &amp; ${esc(first(ta[nx[1]]))}</span>`:`<span></span><small>Final game</small><span></span>`}</div></div>`;
   }).join("");
   return `<div class="tv" id="tv">
     <div class="tvhead">
@@ -950,14 +1040,11 @@ function tvView(){
       <div class="tvscore"><span class="logo h" role="img" aria-label="${esc(c.h.name)} logo"></span><div class="c atp"><b class="num">${st.club.h.w}</b><span>${esc(c.h.short)}</span></div><div class="d">–</div><div class="c dural"><b class="num">${st.club.a.w}</b><span>${esc(c.a.short)}</span></div><span class="logo a" role="img" aria-label="${esc(c.a.name)} logo"></span></div>
       <div class="tvclock"><div class="now num" id="tvnow">${new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</div></div>
     </div>
-    <div class="tvbody${isDB?" full":""}">
+    <div class="tvbody full">
       <div class="tvmain">
-        <div class="tvphase ${cls}"><div class="lbl"><small>${sub}</small>${lbl}</div><div class="cd" id="tvcd">${cd}</div></div>
+        <div class="tvphase ${cls}"><div class="what">${esc(sub)}</div><div class="clock">${cd?`<small>${esc(lbl)}</small><div class="cd" id="tvcd">${cd}</div>`:`<div class="msg">${esc(lbl)}</div>`}</div></div>
         <div class="tvcourts${isDB?" db":""}">${courts}</div>
       </div>
-      ${isDB?"":`<div class="tvside">`}${isDB?"":S.divisions.map(d=>`<div class="tvtbl"><h4>${esc(d.name)}<small>${esc(d.dupr)}</small></h4>${teamTable(st,d,true)}</div>`).join("")}
-        ${isDB?"":`<div class="tvtbl"><h4>Games won by division</h4><table><tbody>${S.divisions.map(d=>`<tr><td>${esc(d.name)}</td><td class="atp">${st.club.h.byDiv[d.id]}</td><td class="dural">${st.club.a.byDiv[d.id]}</td></tr>`).join("")}</tbody></table></div>
-      </div>`}
     </div>
     <div class="tvexit">${canControl()?(S.pausedAt!=null?`<button data-act="tResume">▶ Resume</button>`:`<button data-act="tPause">❚❚ Pause</button>`)+`<button data-act="tRestart">↺ Restart</button>`+(p.kind!=="done"&&p.kind!=="db"?`<button data-act="tSkip">⏭ Skip</button>`:""):""}<button data-act="fs">Full screen</button><button data-act="exitTv">Exit TV</button></div>
   </div>`;
@@ -1025,11 +1112,11 @@ function pdfSchedule(doc){
   doc.addPage(); pdfDreambreaker(doc);
 }
 
-function dbTxt(d,side){return dbOrder(d,side).map(([tk,i])=>TX(S.teams[tk].players[i])+(i===0?" (C)":""))}
+function dbTxt(d,side){return dbOrder(d,side).map(([tk,i])=>TX(S.teams[tk].players[i]))}
 function pdfDreambreaker(doc){
   pdfHead(doc,"Dreambreakers","Final event - one game per division");
   let y=27; doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(...C_MUTED);
-  doc.text(TX("All 9 players from each club play. Rally scoring, first to 25 wins. Players rotate in the order below every 5 points scored (total of both teams) until a team reaches 21. Players 1 and 2 start. (C) = captain."),10,y,{maxWidth:190});
+  doc.text(TX("All 9 players from each club play. Rally scoring, first to 25 wins. Players rotate in the order below every 5 points scored (total of both teams) until a team reaches 21. Players 1 and 2 start."),10,y,{maxWidth:190});
   doc.setTextColor(...C_INK); y+=10;
   S.divisions.forEach(d=>{
     const k=`db-${d.id}`;
@@ -1162,8 +1249,8 @@ function pdfResults(doc){
     doc.setFont("helvetica","bold");doc.setFontSize(9);clubText(doc,sd,c[sd].name.toUpperCase(),x,y+6);
     doc.setFontSize(30);clubText(doc,sd,String(t.w),x,y+19);
     doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);
-    doc.text(TX(`games won  -  ${S.divisions.map(d=>`${d.name}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
-    doc.text(TX(`Points ${t.pf} for, ${t.pa} against${t.d?`  -  ${t.d} drawn`:""}`),x+20,y+19);doc.setTextColor(...C_INK);
+    doc.text(TX(`Games won  -  ${S.divisions.map(d=>`${d.name}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
+    doc.text(TX(`Points ${t.pf}${t.d?`  -  ${t.d} drawn`:""}`),x+20,y+19);doc.setTextColor(...C_INK);
   });
   y+=27;
   // dreambreakers
@@ -1235,8 +1322,8 @@ function scorerView(divId){
     <div class="sc-score num"><span class="atp">${i.h}</span><span class="dash">–</span><span class="dural">${i.a}</span></div>
     <div class="sc-status ${i.over?"over":""}${al.swapping?" swapping":""}${al.warn?" warn":""}">${status}</div>
     <div class="sc-pairs${al.swapping?" swapping":""}">
-      <div><span class="eyebrow atp">${esc(c.h.short)} on court</span><b>${pn(...h1)} &amp; ${pn(...h2)}</b>${i.frozen?"":`<small class="${al.warn?"warnnext":""}">${al.warn?"Get ready":"Next"}: ${pn(...nh1)} &amp; ${pn(...nh2)}</small>`}</div>
-      <div><span class="eyebrow dural">${esc(c.a.short)} on court</span><b>${pn(...a1)} &amp; ${pn(...a2)}</b>${i.frozen?"":`<small class="${al.warn?"warnnext":""}">${al.warn?"Get ready":"Next"}: ${pn(...na1)} &amp; ${pn(...na2)}</small>`}</div>
+      <div><span class="eyebrow atp">${esc(c.h.short)} on court</span><b>${pnp(...h1)} &amp; ${pnp(...h2)}</b>${i.frozen?"":`<small class="${al.warn?"warnnext":""}">${al.warn?"Get ready":"Next"}: ${pnp(...nh1)} &amp; ${pnp(...nh2)}</small>`}</div>
+      <div><span class="eyebrow dural">${esc(c.a.short)} on court</span><b>${pnp(...a1)} &amp; ${pnp(...a2)}</b>${i.frozen?"":`<small class="${al.warn?"warnnext":""}">${al.warn?"Get ready":"Next"}: ${pnp(...na1)} &amp; ${pnp(...na2)}</small>`}</div>
     </div>
     <div class="sc-btns">
       <button class="sc-plus h" data-pt="${d.id}" data-side="h" data-v="1"${i.over?" disabled":""}>+1 ${esc(c.h.short)}</button>
@@ -1274,10 +1361,11 @@ function render(){
       ${missing?(canEdit?`<p class="sub">The database is ready but has no event yet. Create it with the example teams, then enter the real names on the Teams tab.</p><button class="btn primary" data-act="createEvent">Create the event</button>`:(readOnlyReason?`<p class="banner warn" style="margin:8px 0 0">${esc(readOnlyReason)}</p>`:`<p class="sub">Committee members: log in below to set it up.</p>`)):""}
     </div></div>${missing?loginBox():""}</main>${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;return}
   if(scorerDiv()){app.innerHTML=scorerView(scorerDiv())+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
-  if(isTV()){app.innerHTML=tvView();return}
+  if(isTV()){app.innerHTML=tvView();fitTV();return}
   const st=stats();
   if(tab==="setup"&&!editing()) tab="draw";
   let banners="";
+  if(!S.demo&&S.scoresUndo&&editing()&&Date.now()-S.scoresUndo.at<10*60000) banners+=undoBox();
   if(S.demo) banners+=`<div class="banner warn"><span>Example names and Round 1 example scores are loaded so you can see how it works.</span>${editing()?`<button class="btn" data-act="clearDemo">Clear example scores</button>`:""}</div>`;
   if(canEdit) banners+=`<div class="banner info"><span>${committee?"Committee mode: you can enter scores, courts and names. Everyone else sees a read-only page.":"Viewing as a player. Turn committee mode on to edit."}</span><button class="btn" data-act="toggleCommittee">${committee?"View as player":"Committee mode"}</button></div>`;
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
@@ -1398,7 +1486,7 @@ document.addEventListener("click",e=>{
   if(a==="tResume"){timerResume();return}
   if(a==="tSkip"){
     if(t.dataset.armed){timerSkip();return}
-    t.dataset.armed="1";t.textContent="Tap again to skip";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
+    t.dataset.armed="1";t.textContent=phase().kind==="pre"?"Tap again to start Round 1":"Tap again to skip";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="tRestart"){
     if(t.dataset.armed){timerRestartGame();return}
     t.dataset.armed="1";t.textContent="Tap again to restart";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
@@ -1414,11 +1502,12 @@ document.addEventListener("click",e=>{
   if(a==="csvTemplate"){saveTemplate();return}
   if(a==="csvPasteGo"){const v=$("#csvPaste")?.value||"";csvImport(v);return}
   if(a==="toggleCommittee"){committee=!committee;ls.set("committee",committee?"on":"off");render();return}
-  if(a==="clearDemo"){S.scores={};S.demo=false;S.dbIdx={};save([...CTRL,["scores"],["demo"]]);return}
+  if(a==="clearDemo"){clearAllScores();return}
+  if(a==="undoClear"){undoClear();return}
   if(a==="resetTimes"){S.roundStart={};delete S.pausedAt;save(CTRL);return}
   if(a==="clearScores"){
-    if(t.dataset.armed){S.scores={};S.demo=false;S.dbIdx={};save([...CTRL,["scores"],["demo"]]);return}
-    t.dataset.armed="1";t.textContent="Tap again to clear every score";$("#clearConfirm").textContent="This can't be undone.";return}
+    if(t.dataset.armed){clearAllScores();return}
+    t.dataset.armed="1";t.textContent="Tap again to clear every score";$("#clearConfirm").textContent="You can undo this straight after.";return}
 });
 document.addEventListener("input",e=>{
   const el=e.target;
@@ -1450,11 +1539,11 @@ setInterval(()=>{
   const p=phase(),ps=JSON.stringify({k:p.kind,r:p.round,g:p.game});
   if(isTV()){
     if(ps!==lastPhase){lastPhase=ps;render();return}
-    const cd=$("#tvcd"); if(cd&&p.until) cd.textContent=mmss(p.until-nowT());
+    const cd=$("#tvcd"); if(cd&&p.until&&p.kind!=="pre") cd.textContent=mmss(p.until-nowT());
     const ph=$(".tvphase"); if(ph&&p.kind==="game") ph.classList.toggle("low",p.until-nowT()<60000);
     const n=$("#tvnow"); if(n) n.textContent=new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   } else {
-    const c2=$("#ctlcd"); if(c2&&p.until) c2.textContent=mmss(p.until-nowT());
+    const c2=$("#ctlcd"); if(c2&&p.until&&p.kind!=="pre") c2.textContent=mmss(p.until-nowT());
     if(ps!==lastPhase){lastPhase=ps; if(!dirty.size) render();}
   }
 },1000);
