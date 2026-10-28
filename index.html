@@ -198,6 +198,20 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .program span{display:flex;gap:6px;align-items:baseline;white-space:nowrap}
 .program .ptitle{font-family:var(--display);font-style:italic;text-transform:uppercase;font-weight:800;color:var(--ink);font-size:16px}
 .program b{color:var(--lime);font-family:var(--display);font-size:16px}
+.soonwrap{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"s" "p";gap:16px;max-width:640px;margin:0 auto}
+.soonwrap>.soon{grid-area:s} .soonwrap>.poster{grid-area:p} .soonwrap>.soonside{grid-area:d}
+.soonside{display:grid;gap:16px;min-width:0}
+.poster{display:block;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:none;cursor:zoom-in;box-shadow:0 20px 50px -25px rgba(0,0,0,.8)}
+.poster img{display:block;width:100%;height:auto}
+.posterbig{position:fixed;inset:0;z-index:50;background:rgba(3,8,20,.92);display:grid;place-items:center;align-content:center;gap:8px;padding:16px;cursor:zoom-out}
+.posterbig img{max-width:100%;max-height:calc(100vh - 60px);border-radius:10px}
+.posterbig span{color:var(--muted);font-size:13px}
+.info{margin:0;display:grid;gap:8px}
+.info .ir{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:baseline;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.info .ir:last-child{border-bottom:0;padding-bottom:0}
+.info dt{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--lime);font-size:15px}
+.info dd{margin:0;color:var(--ink);font-size:14px;line-height:1.4}
+.card.soon{margin-bottom:0} .card.soon h2{font-family:var(--display);font-style:italic;text-transform:uppercase;font-size:clamp(26px,5vw,40px);margin:6px 0 8px;color:var(--lime);line-height:1.05}
 @media (max-width:600px){
   /* phones: a tidy timetable list, times in one column and events in the next */
   .program{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;padding:12px 16px;font-size:15px}
@@ -551,8 +565,27 @@ const canControl=()=>canEdit||testMode;
 const editing=()=>canControl()&&committee&&!isTV();
 
 /* ----- render: shared header ----- */
+/* "Coming soon": until the committee presses Go live, players only see the event details */
+const comingSoon=()=>S.live!==true&&!(canControl()&&committee);   // "View as player" previews it too
+const POSTER="poster.jpg";
+let posterBig=false;
+function soonPage(){
+  const e=E(), c=S.clubs, when=e.date?new Date(e.date+"T00:00").toLocaleDateString([], {weekday:"long",day:"numeric",month:"long"}):"";
+  return `<section class="soonwrap">
+    <div class="card soon"><div class="eyebrow">Coming soon</div><h2>The draw will be posted here soon</h2>
+      <p class="sub">Check back closer to the day for your team, courts and game times. Scores and standings will update live here on the day.</p></div>
+    <button class="poster" data-act="posterBig" aria-label="View the poster full size"><img src="${POSTER}" alt="Interclub Challenge poster: ${esc(c.h.name)} v ${esc(c.a.name)}"></button>
+    </section>
+    ${posterBig?`<div class="posterbig" data-act="posterSmall" role="dialog" aria-label="Poster"><img src="${POSTER}" alt=""><span>Tap to close</span></div>`:""}`;
+}
+function liveBox(){
+  if(!editing()) return "";
+  return S.live===true
+    ?`<div class="actions"><span class="muted">Live: everyone with the link can see the draw.</span><button class="btn" data-act="goSoon">Back to "Coming soon"</button></div>`
+    :`<div class="actions"><span class="muted">Players currently see a "Coming soon" page. Committee logins see everything.</span><button class="btn primary" data-act="goLive">Go live: show the draw to everyone</button></div>`;
+}
 function header(st){
-  const c=S.clubs;
+  const c=S.clubs, soon=comingSoon();
   const tabs=[["draw","Draw"],["standings","Standings"],["teams","Teams"]];
   if(editing()) tabs.push(["setup","Committee setup"]);
   return `<header class="top"><div class="wrap">
@@ -561,16 +594,16 @@ function header(st){
       <h1><span class="atp">${esc(c.h.name)}</span><span class="vs">vs</span><span class="dural">${esc(c.a.name)}</span></h1></div>
       <div class="board" aria-label="Games won by club">
         <span class="logo h" role="img" aria-label="${esc(c.h.name)} logo"></span>
-        <div class="club atp"><b class="num">${st.club.h.w}</b><span>${esc(c.h.short)}</span></div>
+        ${soon?`<div class="dash">v</div>`:`<div class="club atp"><b class="num">${st.club.h.w}</b><span>${esc(c.h.short)}</span></div>
         <div class="dash">–</div>
-        <div class="club dural"><b class="num">${st.club.a.w}</b><span>${esc(c.a.short)}</span></div>
+        <div class="club dural"><b class="num">${st.club.a.w}</b><span>${esc(c.a.short)}</span></div>`}
         <span class="logo a" role="img" aria-label="${esc(c.a.name)} logo"></span>
       </div>
     </div>
-    <nav class="tabs" role="tablist">
+    ${soon?"":`<nav class="tabs" role="tablist">
       ${tabs.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${tab===k}">${l}</button>`).join("")}
       ${canControl()?`<button class="tvbtn" data-act="tv">TV display ▸</button>`:""}
-    </nav>
+    </nav>`}
   </div></header>`;
 }
 
@@ -607,10 +640,12 @@ function matchCard(m,p){
       </div>`}).join("")}
   </article>`;
 }
-function programHTML(){
-  const st=roundStarts();
+function programHTML(planned){
+  // the Coming soon page always shows the planned times, not times from a test run
+  const keep=S.roundStart; if(planned) S.roundStart={};
+  const st=roundStarts(), dbs=dbStart(); S.roundStart=keep;
   const items=[[fmtT(timeOn(E().arrive)),"Arrival & warm-up"],[fmtT(timeOn(E().briefing)),"Briefing & welcome"],
-    ...st.map((t,i)=>[fmtT(t),`Round ${i+1}`]),[fmtT(dbStart()),"Dreambreakers"],["After","BBQ lunch"]];
+    ...st.map((t,i)=>[fmtT(t),`Round ${i+1}`]),[fmtT(dbs),"Dreambreakers"],["After","BBQ lunch"]];
   return `<div class="program" aria-label="Today's timetable"><span class="ptitle">Today</span>${items.map(([t,l])=>`<span><b class="num">${esc(t)}</b>${esc(l)}</span>`).join("")}</div>`;
 }
 function dbCard(d,p){
@@ -875,7 +910,8 @@ async function saveTemplate(){
 function setupTab(){
   const e=E(),c=S.clubs;
   const f=(id,label,path,val,type="text")=>`<label class="field">${label}<input id="${id}" data-path="${path}" type="${type}" value="${esc(val)}"></label>`;
-  return `<section class="card"><h3>Event</h3><p class="sub">Times feed the draw and the TV countdown.</p><div class="form">
+  return `<section class="card"><h3>Site visibility</h3>${liveBox()}</section>
+  <section class="card"><h3>Event</h3><p class="sub">Times feed the draw and the TV countdown.</p><div class="form">
     ${f("ev-name","Event name","event.name",e.name)}${f("ev-venue","Venue","event.venue",e.venue||"")}${f("ev-date","Date","event.date",e.date,"date")}${f("ev-arrive","Arrival & warm-up","event.arrive",e.arrive,"time")}${f("ev-brief","Briefing & welcome","event.briefing",e.briefing,"time")}${f("ev-start","First game starts","event.start",e.start,"time")}
     ${f("ev-game","Game length (min)","event.gameMin",e.gameMin,"number")}${f("ev-gap","Between games (min)","event.gapMin",e.gapMin,"number")}${f("ev-break","Between rounds (min)","event.breakMin",e.breakMin,"number")}
   </div></section>
@@ -1361,7 +1397,7 @@ function render(){
       ${missing?(canEdit?`<p class="sub">The database is ready but has no event yet. Create it with the example teams, then enter the real names on the Teams tab.</p><button class="btn primary" data-act="createEvent">Create the event</button>`:(readOnlyReason?`<p class="banner warn" style="margin:8px 0 0">${esc(readOnlyReason)}</p>`:`<p class="sub">Committee members: log in below to set it up.</p>`)):""}
     </div></div>${missing?loginBox():""}</main>${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;return}
   if(scorerDiv()){app.innerHTML=scorerView(scorerDiv())+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
-  if(isTV()){app.innerHTML=tvView();fitTV();return}
+  if(isTV()&&!comingSoon()){app.innerHTML=tvView();fitTV();return}
   const st=stats();
   if(tab==="setup"&&!editing()) tab="draw";
   let banners="";
@@ -1369,7 +1405,9 @@ function render(){
   if(S.demo) banners+=`<div class="banner warn"><span>Example names and Round 1 example scores are loaded so you can see how it works.</span>${editing()?`<button class="btn" data-act="clearDemo">Clear example scores</button>`:""}</div>`;
   if(canEdit) banners+=`<div class="banner info"><span>${committee?"Committee mode: you can enter scores, courts and names. Everyone else sees a read-only page.":"Viewing as a player. Turn committee mode on to edit."}</span><button class="btn" data-act="toggleCommittee">${committee?"View as player":"Committee mode"}</button></div>`;
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
-  const body=tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="setup"?setupTab():drawTab();
+  if(comingSoon()) banners=banners.split('<div class="banner').filter(b=>/testOn|testOff|toggleCommittee/.test(b)).map(b=>'<div class="banner'+b).join("");
+  else if(S.live!==true&&editing()) banners=`<div class="banner warn"><span><b>Not live yet.</b> Players see a "Coming soon" page until you go live.</span><button class="btn primary" data-act="goLive">Go live</button></div>`+banners;
+  const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="setup"?setupTab():drawTab();
   app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${installBar()}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
 }
 function saveBar(){
@@ -1501,6 +1539,10 @@ document.addEventListener("click",e=>{
   if(a==="createEvent"){S=clone(DEFAULTS);ensure();setDoc(evRef,clone(S)).then(()=>toast("Event created.")).catch(e=>toast(e.code==="permission-denied"?"Your login isn't on the committee list.":"Couldn't create the event."));return}
   if(a==="csvTemplate"){saveTemplate();return}
   if(a==="csvPasteGo"){const v=$("#csvPaste")?.value||"";csvImport(v);return}
+  if(a==="posterBig"){posterBig=true;render();return}
+  if(a==="posterSmall"){posterBig=false;render();return}
+  if(a==="goLive"){S.live=true;save([...CTRL,["live"]]);toast("The site is live. Everyone with the link can see the draw.");return}
+  if(a==="goSoon"){S.live=false;save([...CTRL,["live"]]);return}
   if(a==="toggleCommittee"){committee=!committee;ls.set("committee",committee?"on":"off");render();return}
   if(a==="clearDemo"){clearAllScores();return}
   if(a==="undoClear"){undoClear();return}
