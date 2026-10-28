@@ -6,13 +6,7 @@
 <title>ATP vs Dural Interclub</title>
 <meta name="description" content="Live draw, courts, scores and standings for the ATP v Dural pickleball interclub challenge.">
 <meta name="theme-color" content="#06122b">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Interclub">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600&display=swap">
 <style>
@@ -70,7 +64,10 @@ h1 .vs{color:var(--lime);font-weight:800;font-size:.75em;margin:0 .3em}
 .tabs .tvbtn{margin-left:auto;color:var(--lime)}
 
 main .wrap{padding-block:20px 120px;display:grid;gap:22px}
-.banner{border-radius:8px;padding:10px 14px;font-size:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.banner{border-radius:8px;padding:10px 14px;font-size:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:center}
+.banner>.btn,.bbtns{justify-self:end}
+.bbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:600px){.banner{grid-template-columns:1fr}.banner>.btn,.bbtns{justify-self:start;justify-content:flex-start}}
 .banner.warn{background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
 .banner.info{background:var(--atp-soft);border:1px solid color-mix(in srgb,var(--atp) 30%,transparent)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -578,6 +575,13 @@ function soonPage(){
     </section>
     ${posterBig?`<div class="posterbig" data-act="posterSmall" role="dialog" aria-label="Poster"><img src="${POSTER}" alt=""><span>Tap to close</span></div>`:""}`;
 }
+/* one committee bar: mode, whether the site is live, and the buttons for both */
+function committeeBar(){
+  const live=S.live===true;
+  if(!committee) return `<div class="banner info"><span><b>Viewing as a player.</b> ${live?"This is what everyone sees.":"Players see the Coming soon page."}</span><div class="bbtns"><button class="btn" data-act="toggleCommittee">Committee mode</button></div></div>`;
+  return `<div class="banner ${live?"info":"warn"}"><span><b>Committee mode</b> · ${live?"The site is <b>live</b>: everyone with the link can see the draw.":"<b>Not live yet</b>: players see the Coming soon page."}</span>
+    <div class="bbtns">${live?`<button class="btn" data-act="goSoon">Back to "Coming soon"</button>`:`<button class="btn primary" data-act="goLive">Go live</button>`}<button class="btn" data-act="toggleCommittee">View as player</button></div></div>`;
+}
 function liveBox(){
   if(!editing()) return "";
   return S.live===true
@@ -910,8 +914,7 @@ async function saveTemplate(){
 function setupTab(){
   const e=E(),c=S.clubs;
   const f=(id,label,path,val,type="text")=>`<label class="field">${label}<input id="${id}" data-path="${path}" type="${type}" value="${esc(val)}"></label>`;
-  return `<section class="card"><h3>Site visibility</h3>${liveBox()}</section>
-  <section class="card"><h3>Event</h3><p class="sub">Times feed the draw and the TV countdown.</p><div class="form">
+  return `<section class="card"><h3>Event</h3><p class="sub">Times feed the draw and the TV countdown.</p><div class="form">
     ${f("ev-name","Event name","event.name",e.name)}${f("ev-venue","Venue","event.venue",e.venue||"")}${f("ev-date","Date","event.date",e.date,"date")}${f("ev-arrive","Arrival & warm-up","event.arrive",e.arrive,"time")}${f("ev-brief","Briefing & welcome","event.briefing",e.briefing,"time")}${f("ev-start","First game starts","event.start",e.start,"time")}
     ${f("ev-game","Game length (min)","event.gameMin",e.gameMin,"number")}${f("ev-gap","Between games (min)","event.gapMin",e.gapMin,"number")}${f("ev-break","Between rounds (min)","event.breakMin",e.breakMin,"number")}
   </div></section>
@@ -1403,12 +1406,11 @@ function render(){
   let banners="";
   if(!S.demo&&S.scoresUndo&&editing()&&Date.now()-S.scoresUndo.at<10*60000) banners+=undoBox();
   if(S.demo) banners+=`<div class="banner warn"><span>Example names and Round 1 example scores are loaded so you can see how it works.</span>${editing()?`<button class="btn" data-act="clearDemo">Clear example scores</button>`:""}</div>`;
-  if(canEdit) banners+=`<div class="banner info"><span>${committee?"Committee mode: you can enter scores, courts and names. Everyone else sees a read-only page.":"Viewing as a player. Turn committee mode on to edit."}</span><button class="btn" data-act="toggleCommittee">${committee?"View as player":"Committee mode"}</button></div>`;
+  if(canEdit||testMode) banners+=committeeBar();
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
   if(comingSoon()) banners=banners.split('<div class="banner').filter(b=>/testOn|testOff|toggleCommittee/.test(b)).map(b=>'<div class="banner'+b).join("");
-  else if(S.live!==true&&editing()) banners=`<div class="banner warn"><span><b>Not live yet.</b> Players see a "Coming soon" page until you go live.</span><button class="btn primary" data-act="goLive">Go live</button></div>`+banners;
   const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="setup"?setupTab():drawTab();
-  app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${installBar()}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
+  app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
 }
 function saveBar(){
   if(!editing()||!dirty.size) return "";
@@ -1595,7 +1597,8 @@ setInterval(()=>{
 onHash();
 if(toastMsg){clearTimeout(toastTimer);toastTimer=setTimeout(()=>{toastMsg="";const t=$(".toast");t&&t.remove()},5000)}
 startFirebase();
-if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+// the installable app lives on the club Events page; remove any old offline helper from this site
+if("serviceWorker" in navigator) navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
 
 </script>
 </body>
