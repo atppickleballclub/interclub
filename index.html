@@ -563,7 +563,8 @@ const editing=()=>canControl()&&committee&&!isTV();
 
 /* ----- render: shared header ----- */
 /* "Coming soon": until the committee presses Go live, players only see the event details */
-const comingSoon=()=>S.live!==true&&!(canControl()&&committee);   // "View as player" previews it too
+let previewDraw=false;   // committee "view as player": preview the draw as it will look after going live
+const comingSoon=()=>S.live!==true&&!(canControl()&&(committee||previewDraw));   // "View as player" shows the Coming soon page unless previewing the draw
 const POSTER="poster.jpg";
 let posterBig=false;
 function soonPage(){
@@ -578,7 +579,9 @@ function soonPage(){
 /* one committee bar: mode, whether the site is live, and the buttons for both */
 function committeeBar(){
   const live=S.live===true;
-  if(!committee) return `<div class="banner info"><span><b>Viewing as a player.</b> ${live?"This is what everyone sees.":"Players see the Coming soon page."}</span><div class="bbtns"><button class="btn" data-act="toggleCommittee">Committee mode</button></div></div>`;
+  if(!committee&&live) return `<div class="banner info"><span><b>Viewing as a player.</b> This is what everyone sees.</span><div class="bbtns"><button class="btn" data-act="toggleCommittee">Committee mode</button></div></div>`;
+  if(!committee) return `<div class="banner info"><span><b>Viewing as a player.</b> ${previewDraw?"Preview of the draw as players will see it after you go live. Only you can see this.":"This is the Coming soon page players see right now."}</span>
+    <div class="bbtns"><button class="btn" data-act="previewDraw">${previewDraw?"Show Coming soon page":"Preview the draw"}</button><button class="btn" data-act="toggleCommittee">Committee mode</button></div></div>`;
   return `<div class="banner ${live?"info":"warn"}"><span><b>Committee mode</b> · ${live?"The site is <b>live</b>: everyone with the link can see the draw.":"<b>Not live yet</b>: players see the Coming soon page."}</span>
     <div class="bbtns">${live?`<button class="btn" data-act="goSoon">Back to "Coming soon"</button>`:`<button class="btn primary" data-act="goLive">Go live</button>`}<button class="btn" data-act="toggleCommittee">View as player</button></div></div>`;
 }
@@ -1541,6 +1544,7 @@ document.addEventListener("click",e=>{
   if(a==="createEvent"){S=clone(DEFAULTS);ensure();setDoc(evRef,clone(S)).then(()=>toast("Event created.")).catch(e=>toast(e.code==="permission-denied"?"Your login isn't on the committee list.":"Couldn't create the event."));return}
   if(a==="csvTemplate"){saveTemplate();return}
   if(a==="csvPasteGo"){const v=$("#csvPaste")?.value||"";csvImport(v);return}
+  if(a==="previewDraw"){previewDraw=!previewDraw;render();return}
   if(a==="posterBig"){posterBig=true;render();return}
   if(a==="posterSmall"){posterBig=false;render();return}
   if(a==="goLive"){S.live=true;save([...CTRL,["live"]]);toast("The site is live. Everyone with the link can see the draw.");return}
