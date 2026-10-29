@@ -188,18 +188,18 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .tvphase .clock small{font-family:var(--body);font-size:calc(1.1*var(--u));color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.12em;text-align:right;line-height:1.2;max-width:calc(9*var(--u))}
 .tvphase .clock .msg{font-family:var(--display);font-size:calc(2.4*var(--u));font-weight:800;font-style:italic;text-transform:uppercase;color:var(--warn)}
 .tvphase .cd{font-family:var(--display);font-size:calc(5.2*var(--u));font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
-.tvphase.game .cd{color:var(--live)} .tvphase.gap .cd,.tvphase.brk .cd,.tvphase.pre .cd{color:var(--warn)}
-.tvphase.low .cd{color:var(--red)}
-.tvphase.over .cd,.timerbar.over .tcd{color:var(--red)} .tvphase.over{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 45%,transparent)}
-.tvphase.over .what{color:var(--red)}
+.tvphase.ph-game .cd{color:var(--live)} .tvphase.ph-gap .cd,.tvphase.ph-brk .cd,.tvphase.ph-pre .cd{color:var(--warn)}
+.tvphase.ph-low .cd{color:var(--red)}
+.tvphase.ph-over .cd,.timerbar.ph-over .tcd{color:var(--red)} .tvphase.ph-over{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 45%,transparent)}
+.tvphase.ph-over .what{color:var(--red)}
 /* timekeeper page */
 .tkp .wrap{max-width:640px;display:grid;gap:18px;padding-block:14px 60px}
 .tkhead{display:flex;align-items:center;justify-content:space-between}
 .tkclock{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 18px;text-align:center}
 .tklbl{font-family:var(--display);font-style:italic;font-weight:800;text-transform:uppercase;font-size:clamp(24px,6vw,36px);margin-top:4px}
 .tkcd{font-family:var(--display);font-weight:700;font-size:clamp(84px,26vw,150px);line-height:1;margin-top:8px;color:var(--live)}
-.tkp.gap .tkcd,.tkp.brk .tkcd{color:var(--warn)} .tkp.low .tkcd,.tkp.over .tkcd,.tkp.over .tklbl{color:var(--red)}
-.tkp.paused .tkcd{color:var(--muted)}
+.tkp.ph-gap .tkcd,.tkp.ph-brk .tkcd{color:var(--warn)} .tkp.ph-low .tkcd,.tkp.ph-over .tkcd,.tkp.ph-over .tklbl{color:var(--red)}
+.tkp.ph-paused .tkcd{color:var(--muted)}
 .tkpaused{margin-top:6px;color:var(--warn);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
 .tkbtns{display:grid;gap:12px}
 .btn.big{font-size:22px;padding:20px 16px;border-radius:12px;font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
@@ -209,7 +209,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 body.tkflash .tkclock{animation:tkflash .5s steps(2) 8}
 @keyframes tkflash{50%{background:var(--red);border-color:var(--red)}}
 body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
-.tvphase.paused .cd{color:var(--muted);animation:blink 1.2s steps(2) infinite}
+.tvphase.ph-paused .cd{color:var(--muted);animation:blink 1.2s steps(2) infinite}
 @keyframes blink{50%{opacity:.35}}
 .program{display:flex;flex-wrap:wrap;gap:6px 18px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted)}
 .program span{display:flex;gap:6px;align-items:baseline;white-space:nowrap}
@@ -313,12 +313,12 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .tvdb ol{margin:calc(.4*var(--u)) 0 0;padding-left:1.5em;font-size:calc(1.35*var(--u));line-height:1.5}
 .tvdb li.start{color:var(--lime);font-weight:600}
 .timerbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--lime);border-radius:10px;padding:12px 16px}
-.timerbar.paused{border-left-color:var(--gold)}
+.timerbar.ph-paused{border-left-color:var(--gold)}
 .timerbar .tinfo{display:grid;gap:2px;flex:1;min-width:180px}
 .timerbar .tinfo b{font-family:var(--display);font-size:22px;font-style:italic;text-transform:uppercase}
 .timerbar .tcd{font-family:var(--display);font-size:40px;font-weight:700;line-height:1;color:var(--lime)}
-.timerbar.paused .tcd{color:var(--gold)}
-.timerbar.low .tcd{color:var(--red)}
+.timerbar.ph-paused .tcd{color:var(--gold)}
+.timerbar.ph-low .tcd{color:var(--red)}
 .tvc .ct b{color:var(--gold)}
 .tvcourts{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(1*var(--u))}
 .tvc{background:var(--surface);border:1px solid var(--line);border-radius:calc(.8*var(--u));padding:calc(.9*var(--u)) calc(1*var(--u));display:grid;gap:calc(.5*var(--u));min-width:0}
@@ -1005,6 +1005,7 @@ function phaseInfo(st){
   else if(p.kind==="db"){sub="Dreambreaker · rally scoring, first to 25";lbl="Dreambreaker in play";cd=""}
   else {st=st||stats();sub="All games complete";lbl=st.club.h.w>st.club.a.w?`${c.h.short} win the challenge`:st.club.a.w>st.club.h.w?`${c.a.short} win the challenge`:"Challenge drawn";cd=""}
   if(S.pausedAt!=null){cls+=" paused";sub="Timer paused · "+sub}
+  cls=cls.trim().split(/\s+/).map(x=>"ph-"+x).join(" ");   // prefixed so "game"/"over" never pick up the draw table's styles
   return {p,lbl,sub,cd,cls};
 }
 /* timekeeper actions: all saved so every screen follows. The last step can be undone. */
@@ -1082,7 +1083,7 @@ function beeps(n,len=.35,gap=.18,freq=880,freq2){
 }
 function buzz(pattern){try{navigator.vibrate&&navigator.vibrate(pattern)}catch(e){}}
 function alertEndOfGame(){beeps(10,.4,.12,1800,2400);buzz([700,200,700,200,700,200,1200]);document.body.classList.add("tkflash");setTimeout(()=>document.body.classList.remove("tkflash"),4000)}
-function alertNextReady(){beeps(3,.25,.12,1500);buzz([200,120,200])}
+function alertTenSec(){beeps(2,.12,.1,1500);buzz([120,100,120])}   // gentle "10 seconds left" pip
 document.addEventListener("click",()=>{if(isTimer())unlockAudio()},true);
 
 /* ----- timekeeper page (#timer): big clock and buttons for whoever runs the time ----- */
@@ -1091,7 +1092,7 @@ function timerPage(){
   if(!canControl()) return `<main><div class="wrap"><div class="card"><h3>Timer</h3><p class="sub">Only committee members can run the timer.</p><button class="btn" data-act="exitTimer">Back to the draw</button></div></div></main>`;
   const i=phaseInfo(), p=i.p, paused=S.pausedAt!=null, m=mainAction(p);
   const next=p.kind==="over"?"The clock is counting up since time ran out. Once golden points are done and players have changed over, start the next game."
-    :p.kind==="game"?"When time runs out your phone beeps and vibrates, and the clock counts up until you start the next game."
+    :p.kind==="game"?"Your phone gives two short pips at 10 seconds left. When time runs out it beeps and vibrates, and the clock counts up until you start the next game."
     :p.kind==="gap"||p.kind==="brk"?"Start early if everyone is ready, or it counts down and then waits for you."
     :p.kind==="ready"||p.kind==="pre"?"Press start when the players are on court.":"";
   return `<main class="tkp ${i.cls}"><div class="wrap">
@@ -1681,16 +1682,18 @@ async function onHash(){
 window.addEventListener("hashchange",onHash);
 
 /* tick: TV every second */
+let tenKey=null;
 let lastPhase=(()=>{const p=phase();return JSON.stringify({k:p.kind,r:p.round,g:p.game})})();
 setInterval(()=>{
   const p=phase(),ps=JSON.stringify({k:p.kind,r:p.round,g:p.game});
   if(isTimer()&&ps!==lastPhase){const was=JSON.parse(lastPhase).k;
-    if(p.kind==="over"&&was!=="over") alertEndOfGame();
-    else if((was==="gap"||was==="brk")&&p.kind==="ready") alertNextReady();}
+    if(p.kind==="over"&&was!=="over") alertEndOfGame();}
+  if(isTimer()&&p.kind==="game"&&S.pausedAt==null){const left=p.until-nowT(),key=p.round+"-"+p.game+"-"+(S.clk&&S.clk.t0);
+    if(left<=10000&&left>7000&&tenKey!==key){tenKey=key;alertTenSec()}}
   if(isTV()){
     if(ps!==lastPhase){lastPhase=ps;render();return}
     const cd=$("#tvcd"); if(cd) cd.textContent=p.kind==="over"?"":cdText(p);
-    const ph=$(".tvphase"); if(ph&&p.kind==="game") ph.classList.toggle("low",p.until-nowT()<60000);
+    const ph=$(".tvphase"); if(ph&&p.kind==="game") ph.classList.toggle("ph-low",p.until-nowT()<60000);
     const n=$("#tvnow"); if(n) n.textContent=new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   } else {
     const c2=$("#ctlcd"); if(c2) c2.textContent=cdText(p);
