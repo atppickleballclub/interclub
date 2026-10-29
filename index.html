@@ -117,6 +117,7 @@ main .wrap{padding-block:20px 120px;display:grid;gap:22px}
 .score .blank{color:var(--muted);font-weight:500;font-size:16px}
 .score input{width:46px;text-align:center;font-family:var(--display);font-size:20px;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--sunk);padding:2px}
 .score input.changed{border-color:var(--warn);background:var(--warn-soft)}
+.score input.tie{border-color:var(--red);background:color-mix(in srgb,var(--red) 18%,var(--sunk))}
 /* narrow cards (phones, and the 3-across grid on computers): game label on top, each pair on its own line, score on the right */
 .match{container-type:inline-size}
 .game.ghead{display:none}
@@ -189,6 +190,25 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .tvphase .cd{font-family:var(--display);font-size:calc(5.2*var(--u));font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
 .tvphase.game .cd{color:var(--live)} .tvphase.gap .cd,.tvphase.brk .cd,.tvphase.pre .cd{color:var(--warn)}
 .tvphase.low .cd{color:var(--red)}
+.tvphase.over .cd,.timerbar.over .tcd{color:var(--red)} .tvphase.over{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 45%,transparent)}
+.tvphase.over .what{color:var(--red)}
+/* timekeeper page */
+.tkp .wrap{max-width:640px;display:grid;gap:18px;padding-block:14px 60px}
+.tkhead{display:flex;align-items:center;justify-content:space-between}
+.tkclock{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 18px;text-align:center}
+.tklbl{font-family:var(--display);font-style:italic;font-weight:800;text-transform:uppercase;font-size:clamp(24px,6vw,36px);margin-top:4px}
+.tkcd{font-family:var(--display);font-weight:700;font-size:clamp(84px,26vw,150px);line-height:1;margin-top:8px;color:var(--live)}
+.tkp.gap .tkcd,.tkp.brk .tkcd{color:var(--warn)} .tkp.low .tkcd,.tkp.over .tkcd,.tkp.over .tklbl{color:var(--red)}
+.tkp.paused .tkcd{color:var(--muted)}
+.tkpaused{margin-top:6px;color:var(--warn);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
+.tkbtns{display:grid;gap:12px}
+.btn.big{font-size:22px;padding:20px 16px;border-radius:12px;font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.tkrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tkrow .btn{padding:14px 12px;font-size:16px}
+.tkhelp{text-align:center;margin:0}
+body.tkflash .tkclock{animation:tkflash .5s steps(2) 8}
+@keyframes tkflash{50%{background:var(--red);border-color:var(--red)}}
+body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .tvphase.paused .cd{color:var(--muted);animation:blink 1.2s steps(2) infinite}
 @keyframes blink{50%{opacity:.35}}
 .program{display:flex;flex-wrap:wrap;gap:6px 18px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted)}
@@ -400,7 +420,7 @@ function ensure(){
   S.divisions.forEach((d,di)=>{const k=`db-${d.id}`; if(S.courts[k]==null) S.courts[k]=di+1;});
   S.event.arrive??="08:00"; S.event.briefing??="08:20";
   if(S.demo && !Object.keys(S.scores).length){
-    const demo=[[11,8],[7,12],[13,10],[9,9],[12,6],[10,11],[14,9],[8,13],[11,10],[12,12],[6,13],[11,9],[10,8],[9,12],[13,11],[12,9],[8,10],[11,7]];
+    const demo=[[11,8],[7,12],[13,10],[10,9],[12,6],[10,11],[14,9],[8,13],[11,10],[12,11],[6,13],[11,9],[10,8],[9,12],[13,11],[12,9],[8,10],[11,7]];
     let i=0;
     S.divisions.forEach(d=>{for(let m=1;m<=MPR;m++)for(let g=1;g<=3;g++){S.scores[`${d.id}-r1-m${m}-g${g}`]=demo[i++%demo.length];}});
   }
@@ -437,8 +457,7 @@ function baseTs(){
 function roundStarts(){
   const out=[];
   for(let r=0;r<ROUNDS;r++){
-    const o=S.roundStart?.[r+1];
-    out.push(o!=null?o:(r===0?baseTs():out[r-1]+(roundLen()+E().breakMin)*60000));
+    out.push(r===0?baseTs():out[r-1]+(roundLen()+E().breakMin)*60000);
   }
   return out;
 }
@@ -488,33 +507,35 @@ function dbShuffle(divId){
   ["h","a"].forEach(sd=>{S.dbOrder[`${divId}-${sd}`]=mix(9)});
   delete (S.dbIdx||{})[`db-${divId}`];
 }
+/* The timekeeper runs the clock: S.clk = {r, g, st, t0}
+   st: "run" game g of round r started at t0 (after the set time it's golden point until they press Game finished)
+       "gap" game g finished at t0, changeover to game g+1
+       "brk" round r finished at t0, break before round r+1 (or the dreambreakers)
+       "ready" waiting for the timekeeper to start game g of round r */
 function phase(t=nowT()){
-  const st=roundStarts(), gm=E().gameMin, gp=E().gapMin, rl=roundLen();
+  const gm=E().gameMin*60000, gp=E().gapMin*60000, bk=E().breakMin*60000;
   const dbManual=S.roundStart?.[DB];
   if(dbManual!=null&&t>=dbManual) return dbDone()?{kind:"done",round:DB,game:1}:{kind:"db",round:DB,game:1};
-  // nothing happens until a committee member starts a round (usually round 1)
-  const started=[1,2,3].some(r=>S.roundStart?.[r]!=null);
-  if(!started) return {kind:"pre",round:1,game:1,until:st[0]};
-  // the round in play is the latest one whose start has passed, so "Start round 2 now" works even if round 1 is still on the clock
-  let r=-1; for(let i=0;i<ROUNDS;i++) if(t>=st[i]) r=i;
-  if(r<0) return {kind:"pre",round:1,game:1,until:st[0]};
-  const rs=st[r], re=rs+rl*60000;
-  if(t<re){
-    const off=(t-rs)/60000; let g=Math.floor(off/(gm+gp)); if(g>2)g=2;
-    const into=off-g*(gm+gp);
-    if(into<gm) return {kind:"game",round:r+1,game:g+1,until:rs+(g*(gm+gp)+gm)*60000};
-    return {kind:"gap",round:r+1,game:g+2,until:rs+((g+1)*(gm+gp))*60000};
-  }
-  if(r<ROUNDS-1) return {kind:"brk",round:r+2,game:1,until:st[r+1]};
-  const ds=dbStart();
-  if(t<ds) return {kind:"brk",round:DB,game:1,until:ds};
-  if(!dbDone()) return {kind:"db",round:DB,game:1};
-  return {kind:"done",round:DB,game:1};
+  const c=S.clk;
+  if(!c) return {kind:"pre",round:1,game:1,until:baseTs()};
+  if(c.st==="run"){ if(t<c.t0+gm) return {kind:"game",round:c.r,game:c.g,until:c.t0+gm};
+    return {kind:"over",round:c.r,game:c.g,since:c.t0+gm}; }
+  if(c.st==="gap"){ if(t<c.t0+gp) return {kind:"gap",round:c.r,game:c.g+1,until:c.t0+gp};
+    return {kind:"ready",round:c.r,game:c.g+1}; }
+  if(c.st==="brk"){ const nr=c.r<ROUNDS?c.r+1:DB;
+    if(t<c.t0+bk) return {kind:"brk",round:nr,game:1,until:c.t0+bk};
+    return {kind:"ready",round:nr,game:1}; }
+  return {kind:"ready",round:c.r,game:c.g};
+}
+const inPlay=p=>p.kind==="game"||p.kind==="over";
+function cdText(p,now=nowT()){
+  if(p.kind==="over") return "+"+mmss(now-p.since);
+  return p.until&&p.kind!=="pre"?mmss(p.until-now):"";
 }
 function roundStatus(r){
   const p=phase();
   if(p.kind==="done"||r<p.round) return "done";
-  if(r===p.round && (p.kind==="game"||p.kind==="gap")) return "live";
+  if(r===p.round && (inPlay(p)||p.kind==="gap"||(p.kind==="ready"&&p.game>1))) return "live";
   if(r===p.round) return "next";
   return "later";
 }
@@ -619,7 +640,7 @@ function scoreCell(m,g){
   const s=sc(m.key,g);
   if(editing()){
     const v=S.scores[gkey(m.key,g)]||["",""];
-    const ch=dirty.has(gkey(m.key,g))?" changed":"";
+    const ch=(dirty.has(gkey(m.key,g))?" changed":"")+(v[0]!==""&&v[1]!==""&&+v[0]===+v[1]?" tie":"");
     return `<div class="score"><input id="s-${gkey(m.key,g)}-0" class="${ch.trim()}" data-g="${gkey(m.key,g)}" data-i="0" inputmode="numeric" type="number" min="0" max="99" value="${esc(v[0])}" aria-label="${esc(S.teams[m.h].name)} score"> <span class="muted">–</span> <input id="s-${gkey(m.key,g)}-1" class="${ch.trim()}" data-g="${gkey(m.key,g)}" data-i="1" inputmode="numeric" type="number" min="0" max="99" value="${esc(v[1])}" aria-label="${esc(S.teams[m.a].name)} score"></div>`;
   }
   if(!s) return `<div class="score"><span class="blank">vs</span></div>`;
@@ -629,7 +650,7 @@ function scoreCell(m,g){
 function matchCard(m,p){
   let hw=0,aw=0,n=0;
   for(let g=1;g<=3;g++){const s=sc(m.key,g);if(s){n++;if(s[0]>s[1])hw++;else if(s[1]>s[0])aw++}}
-  const live=(p.kind==="game"||p.kind==="gap")&&p.round===m.r;
+  const live=(inPlay(p)||p.kind==="gap"||(p.kind==="ready"&&p.game>1))&&p.round===m.r;
   const courtSel=editing()?`<select id="c-${m.key}" data-court="${m.key}" aria-label="Court">${Array.from({length:Math.max(12,m.court)},(_,i)=>`<option value="${i+1}"${i+1==m.court?" selected":""}>Ct ${i+1}</option>`).join("")}</select>`:`Ct ${m.court}`;
   return `<article class="match${live?" isLive":""}">
     <div class="mhead"><span class="court">${courtSel}</span>
@@ -638,7 +659,7 @@ function matchCard(m,p){
     </div>
     ${editing()?`<div class="game ghead" aria-hidden="true"><div class="score"><span class="atp">${esc(S.clubs.h.short)}</span><span class="dash">–</span><span class="dural">${esc(S.clubs.a.short)}</span></div></div>`:""}
     ${[1,2,3].map(g=>{
-      const cur=p.kind==="game"&&p.round===m.r&&p.game===g;
+      const cur=inPlay(p)&&p.round===m.r&&p.game===g;
       return `<div class="game${cur?" cur":""}">
         <div class="t"><b>Game ${g}</b></div>
         <div class="pair home">${pairHTML(m.h,g)}</div>
@@ -649,7 +670,7 @@ function matchCard(m,p){
 }
 function programHTML(planned){
   // the Coming soon page always shows the planned times, not times from a test run
-  const keep=S.roundStart; if(planned) S.roundStart={};
+  const keep=S.roundStart; S.roundStart={};
   const st=roundStarts(), dbs=dbStart(); S.roundStart=keep;
   const items=[[fmtT(timeOn(E().arrive)),"Arrival & warm-up"],[fmtT(timeOn(E().briefing)),"Briefing & welcome"],
     ...st.map((t,i)=>[fmtT(t),`Round ${i+1}`]),[fmtT(dbs),"Dreambreakers"],["After","BBQ lunch"]];
@@ -699,8 +720,8 @@ function drawTab(){
 /* ----- standings ----- */
 function teamTable(st,d,compact){
   const rows=rank(Object.values(st.team).filter(t=>t.k.startsWith(d.id+"-")));
-  return `<div class="tbl"><table><thead><tr><th>Team</th>${compact?"":"<th title='Matchups won–lost'>Ties</th>"}<th>W</th>${compact?"":"<th>D</th>"}<th>L</th>${compact?"":"<th>PF</th><th>PA</th>"}<th>+/–</th></tr></thead><tbody>
-  ${rows.map(t=>`<tr><td><span class="dot" style="background:var(--${sideOf(t.k)==="h"?"atp":"dural"})"></span>${esc(S.teams[t.k].name)}</td>${compact?"":`<td>${t.tw}–${t.tl}${t.tt?`–${t.tt}`:""}</td>`}<td>${t.w}</td>${compact?"":`<td>${t.d}</td>`}<td>${t.l}</td>${compact?"":`<td>${t.pf}</td><td>${t.pa}</td>`}<td>${sgn(t.pf-t.pa)}</td></tr>`).join("")}
+  return `<div class="tbl"><table><thead><tr><th>Team</th>${compact?"":"<th title='Matchups won–lost'>Ties</th>"}<th>W</th><th>L</th>${compact?"":"<th>PF</th><th>PA</th>"}<th>+/–</th></tr></thead><tbody>
+  ${rows.map(t=>`<tr><td><span class="dot" style="background:var(--${sideOf(t.k)==="h"?"atp":"dural"})"></span>${esc(S.teams[t.k].name)}</td>${compact?"":`<td>${t.tw}–${t.tl}</td>`}<td>${t.w}</td><td>${t.l}</td>${compact?"":`<td>${t.pf}</td><td>${t.pa}</td>`}<td>${sgn(t.pf-t.pa)}</td></tr>`).join("")}
   </tbody></table></div>`;
 }
 function standingsTab(){
@@ -926,8 +947,8 @@ function setupTab(){
     ${f("cl-a","Visiting club","clubs.a.name",c.a.name)}${f("cl-as","Visiting short name","clubs.a.short",c.a.short)}
     ${S.divisions.map((d,i)=>f(`dv-${i}`,`${esc(d.name)} rating band`,`divisions.${i}.dupr`,d.dupr)).join("")}
   </div><p class="sub" style="margin-top:12px">Team and player names are edited on the Teams tab.</p></section>
-  <section class="card"><h3>Round timing</h3><p class="sub">The timer waits until a committee member presses "Start round 1 now" (on the timer bar or the Draw tab). Later rounds follow on automatically from that start.</p>
-    <div class="actions">${[1,2,3].map(r=>`<span class="muted">Round ${r}: <b class="num" style="color:var(--ink)">${fmtT(roundStarts()[r-1])}</b>${S.roundStart?.[r]!=null?" (started manually)":""}</span>`).join(" · ")}
+  <section class="card"><h3>Round timing</h3><p class="sub">The timekeeper runs the clock from the Timer page: start each game, and press "Game finished" once golden points are done. Changeovers and breaks count down, then wait for the next start. Planned times:</p>
+    <div class="actions">${[1,2,3].map(r=>`<span class="muted">Round ${r}: <b class="num" style="color:var(--ink)">${fmtT(roundStarts()[r-1])}</b></span>`).join(" · ")}
     <button class="btn" data-act="resetTimes">Reset timer (wait for Round 1 start)</button></div></section>
   <section class="card"><h3>Printable sheets</h3><p class="sub">A4 PDFs built from the current names, courts and times. Print them after the teams are entered.</p>
     <div class="actions">
@@ -942,6 +963,13 @@ function setupTab(){
     ${undoBox()}</section>`;
 }
 
+/* no draws: every game is decided by golden point, so a level score can't be saved */
+function scoresOk(){
+  const bad=matches().flatMap(m=>[1,2,3].filter(g=>{const v=sc(m.key,g);return v&&v[0]===v[1]}).map(g=>`Round ${m.r} Ct ${m.court} game ${g}`));
+  if(!bad.length) return true;
+  toast(`No draws: ${bad.slice(0,3).join(", ")}${bad.length>3?` and ${bad.length-3} more`:""} ${bad.length>1?"are":"is"} level. Enter the score after the golden point.`);
+  return false;
+}
 /* ----- clear scores, with one level of undo (kept in the saved data so any screen can undo) ----- */
 function clearAllScores(){
   const n=Object.keys(S.scores||{}).length;
@@ -966,61 +994,115 @@ function phaseInfo(st){
     else if(now<p.until){sub="Briefing & welcome";lbl=`Round 1 starts ${fmtT(p.until)}`}
     else {sub="Briefing & welcome";lbl="Round 1 starting soon"}
     cd=""}
-  else if(p.kind==="game"){sub=`Round ${p.round} · game ${p.game} of 3`;lbl="Time remaining";cd=mmss(p.until-now);if(p.until-now<60000)cls+=" low"}
-  else if(p.kind==="gap"){sub=`Round ${p.round} · changeover`;lbl=`Game ${p.game} starts in`;cd=mmss(p.until-now)}
-  else if(p.kind==="brk"&&p.round===DB){sub="Break before the dreambreaker";lbl="Dreambreaker starts in";cd=mmss(p.until-now)}
-  else if(p.kind==="brk"){sub="Break between rounds";lbl=`Round ${p.round} starts in`;cd=mmss(p.until-now)}
+  else if(p.kind==="game"){sub=`Round ${p.round} · game ${p.game} of 3`;lbl="Time remaining";cd=cdText(p,now);if(p.until-now<60000)cls+=" low"}
+  else if(p.kind==="over"){sub=`Round ${p.round} · game ${p.game} of 3`;lbl="End of game";cd=cdText(p,now)}
+  else if(p.kind==="ready"&&p.round===DB){sub="Dreambreakers";lbl="Starting soon"}
+  else if(p.kind==="ready"){sub=`Round ${p.round} · game ${p.game} of 3`;lbl=p.game===1?`Round ${p.round} starting soon`:`Game ${p.game} starting soon`}
+  else if(p.kind==="gap"){sub=`Round ${p.round} · changeover`;lbl=`Game ${p.game} starts in`;cd=cdText(p,now)}
+  else if(p.kind==="brk"&&p.round===DB){sub="Break before the dreambreaker";lbl="Dreambreaker starts in";cd=cdText(p,now)}
+  else if(p.kind==="brk"){sub="Break between rounds";lbl=`Round ${p.round} starts in`;cd=cdText(p,now)}
   else if(p.kind==="db"){sub="Dreambreaker · rally scoring, first to 25";lbl="Dreambreaker in play";cd=""}
   else {st=st||stats();sub="All games complete";lbl=st.club.h.w>st.club.a.w?`${c.h.short} win the challenge`:st.club.a.w>st.club.h.w?`${c.a.short} win the challenge`:"Challenge drawn";cd=""}
   if(S.pausedAt!=null){cls+=" paused";sub="Timer paused · "+sub}
   return {p,lbl,sub,cd,cls};
 }
-/* pause / resume / restart: all saved so every screen follows */
-function currentRoundIdx(t){const st=roundStarts(),rl=roundLen()*60000;for(let r=0;r<ROUNDS;r++){if(t<st[r]+rl)return r+1}return null}
-const CTRL=[["roundStart"],["pausedAt"],["dbOrder"],["dbIdx"]];
-function timerPause(){if(S.pausedAt!=null)return;S.pausedAt=Date.now();save(CTRL)}
+/* timekeeper actions: all saved so every screen follows. The last step can be undone. */
+function clkSet(c){S.clkPrev=S.clk?JSON.parse(JSON.stringify(S.clk)):null;if(c)S.clk=c;else delete S.clk;delete S.pausedAt;save(CTRL);}
+const CTRL=[["roundStart"],["pausedAt"],["dbOrder"],["dbIdx"],["clk"],["clkPrev"]];
+function timerPause(){if(S.pausedAt!=null||!S.clk)return;S.pausedAt=Date.now();save(CTRL)}
 function timerResume(){
   if(S.pausedAt==null)return;
-  const shift=Date.now()-S.pausedAt, k=currentRoundIdx(S.pausedAt);
-  if(k){const st=roundStarts();S.roundStart={...(S.roundStart||{})};S.roundStart[k]=st[k-1]+shift;for(let x=k+1;x<=DB;x++)delete S.roundStart[x]}
-  else if(S.pausedAt<dbStart()){S.roundStart={...(S.roundStart||{})};S.roundStart[DB]=dbStart()+shift}
+  if(S.clk) S.clk={...S.clk,t0:S.clk.t0+(Date.now()-S.pausedAt)};
   delete S.pausedAt; save(CTRL);
 }
 function timerRestartGame(){
-  const p=phase(); if(p.kind==="done"||p.kind==="db")return;
-  const now=Math.floor(Date.now()/1000)*1000, g=p.game, r=p.round;
-  S.roundStart={...(S.roundStart||{})};
-  S.roundStart[r]=now-(g-1)*(E().gameMin+E().gapMin)*60000;
-  for(let x=r+1;x<=DB;x++)delete S.roundStart[x];
-  delete S.pausedAt; save(CTRL);
+  const p=phase(); if(!inPlay(p))return;
+  clkSet({r:p.round,g:p.game,st:"run",t0:Date.now()});
 }
-function skipLabel(p){
-  if(p.kind==="game") return p.game<3?`Skip to changeover`:(p.round<ROUNDS?`End round ${p.round}`:`End final game`);
-  if(p.kind==="gap") return `Skip to game ${p.game}`;
-  if(p.kind==="brk"&&p.round===DB) return "Start dreambreaker now";
-  if(p.kind==="pre"||p.kind==="brk") return `Start round ${p.round} now`;
-  return "";
+function timerUndo(){
+  if(S.clkPrev===undefined)return;
+  const prev=S.clkPrev; if(prev) S.clk=prev; else delete S.clk;
+  delete S.clkPrev; delete S.pausedAt; save(CTRL);
 }
-function timerSkip(){
-  const p=phase(); if(p.kind==="done"||p.kind==="db")return;
-  const now=Math.floor(Date.now()/1000)*1000, st=roundStarts(), r=p.round;
-  S.roundStart={...(S.roundStart||{})};
-  if(p.kind==="pre"||p.kind==="brk") S.roundStart[r]=now;
-  else S.roundStart[r]=st[r-1]-(p.until-nowT());
-  for(let x=r+1;x<=DB;x++)delete S.roundStart[x];
-  delete S.pausedAt; save(CTRL);
+// the one big button: start the next game, or finish the game in play
+function mainAction(p){
+  if(p.kind==="db"||p.kind==="done") return null;
+  if(p.kind==="game") return {act:"tNext",label:p.game<3?`Start game ${p.game+1}`:(p.round<ROUNDS?`Start round ${p.round+1}`:"Start the dreambreakers"),confirm:"Time isn't up yet. Tap again to start early"};
+  if(p.kind==="over"&&p.game===3&&p.round===ROUNDS) return {act:"tStartDb",label:"Start the dreambreakers",confirm:"Tap again to start the dreambreakers"};
+  if(p.kind==="over") return {act:"tNext",label:p.game<3?`Start game ${p.game+1}`:`Start round ${p.round+1}`};
+  if(p.round===DB) return {act:"tStartDb",label:"Start the dreambreakers",confirm:"Tap again to start the dreambreakers"};
+  return {act:"tStart",label:p.game===1?`Start round ${p.round}`:`Start game ${p.game}`};
 }
+function timerStart(){
+  const p=phase(); if(inPlay(p)||p.round===DB||p.kind==="db"||p.kind==="done")return;
+  clkSet({r:p.round,g:p.game,st:"run",t0:Date.now()});
+}
+// start the game after the one in play (golden points done, players changed over)
+function timerNext(){
+  const c=S.clk; if(!c||c.st!=="run")return;
+  if(c.g<3) return clkSet({r:c.r,g:c.g+1,st:"run",t0:Date.now()});
+  if(c.r<ROUNDS) return clkSet({r:c.r+1,g:1,st:"run",t0:Date.now()});
+  startDreambreakers();
+}
+function timerFinish(){
+  const c=S.clk; if(!c||c.st!=="run")return;
+  clkSet(c.g<3?{r:c.r,g:c.g,st:"gap",t0:Date.now()}:{r:c.r,g:3,st:"brk",t0:Date.now()});
+}
+function startDreambreakers(){S.roundStart={...(S.roundStart||{}),[DB]:Math.floor(Date.now()/1000)*1000};delete S.pausedAt;save(CTRL);}
 function timerControls(){
-  const i=phaseInfo(), paused=S.pausedAt!=null, done=i.p.kind==="done"||i.p.kind==="db", idle=done||i.p.kind==="pre";
-  const what=i.p.kind==="game"||i.p.kind==="gap"?`game ${i.p.game}`:i.p.round===DB?"dreambreaker":`round ${i.p.round}`;
+  const i=phaseInfo(), p=i.p, paused=S.pausedAt!=null, m=mainAction(p);
   return `<div class="timerbar ${i.cls}">
     <div class="tinfo"><span class="eyebrow">${esc(i.sub)}</span><b>${esc(i.lbl)}</b></div>
     <div class="tcd num" id="ctlcd">${i.cd}</div>
     <div class="actions">
-      ${paused?`<button class="btn primary" data-act="tResume">▶ Resume timer</button>`:`<button class="btn" data-act="tPause"${idle?" disabled":""}>❚❚ Pause timer</button>`}
-      <button class="btn" data-act="tRestart"${idle?" disabled":""}>↺ Restart ${what}</button>
-      ${done?"":i.p.kind==="pre"?`<button class="btn primary" data-act="tSkip">▶ ${esc(skipLabel(i.p))}</button>`:`<button class="btn" data-act="tSkip">⏭ ${esc(skipLabel(i.p))}</button>`}
+      ${m?`<button class="btn primary" data-act="${m.act}"${m.confirm?` data-confirm="${esc(m.confirm)}"`:""}>${inPlay(p)?"■":"▶"} ${esc(m.label)}</button>`:""}
+      ${paused?`<button class="btn primary" data-act="tResume">▶ Resume</button>`:`<button class="btn" data-act="tPause"${!S.clk||p.kind==="db"||p.kind==="done"?" disabled":""}>❚❚ Pause</button>`}
+      ${inPlay(p)?`<button class="btn" data-act="tRestart">↺ Restart game ${p.game}</button>`:""}
+      ${S.clkPrev!==undefined?`<button class="btn" data-act="tUndo">↶ Undo</button>`:""}
+      <button class="btn" data-act="timerPage">⏱ Timer page</button>
     </div></div>`;
+}
+
+/* ----- timekeeper alerts: beep + vibrate when time runs out (phones need one tap first before they allow sound) ----- */
+let actx=null;
+const soundOn=()=>!!actx&&actx.state==="running";
+function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==="suspended")actx.resume().then(()=>{if(isTimer())render()})}catch(e){}}
+function beeps(n,len=.35,gap=.18,freq=880){
+  if(!soundOn())return;
+  const t0=actx.currentTime+.05;
+  for(let i=0;i<n;i++){const o=actx.createOscillator(),g=actx.createGain(),t=t0+i*(len+gap);
+    o.type="square";o.frequency.value=freq;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.35,t+.02);g.gain.exponentialRampToValueAtTime(0.0001,t+len);
+    o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+len+.05)}
+}
+function buzz(pattern){try{navigator.vibrate&&navigator.vibrate(pattern)}catch(e){}}
+function alertEndOfGame(){beeps(3,.5,.2,880);buzz([500,200,500,200,900]);document.body.classList.add("tkflash");setTimeout(()=>document.body.classList.remove("tkflash"),4000)}
+function alertNextReady(){beeps(2,.2,.15,660);buzz([200,120,200])}
+document.addEventListener("click",()=>{if(isTimer())unlockAudio()},true);
+
+/* ----- timekeeper page (#timer): big clock and buttons for whoever runs the time ----- */
+const isTimer=()=>location.hash==="#timer";
+function timerPage(){
+  if(!canControl()) return `<main><div class="wrap"><div class="card"><h3>Timer</h3><p class="sub">Only committee members can run the timer.</p><button class="btn" data-act="exitTimer">Back to the draw</button></div></div></main>`;
+  const i=phaseInfo(), p=i.p, paused=S.pausedAt!=null, m=mainAction(p);
+  const next=p.kind==="over"?"The clock is counting up since time ran out. Once golden points are done and players have changed over, start the next game."
+    :p.kind==="game"?"When time runs out your phone beeps and vibrates, and the clock counts up until you start the next game."
+    :p.kind==="gap"||p.kind==="brk"?"Start early if everyone is ready, or it counts down and then waits for you."
+    :p.kind==="ready"||p.kind==="pre"?"Press start when the players are on court.":"";
+  return `<main class="tkp ${i.cls}"><div class="wrap">
+    <div class="tkhead"><button class="btn ghost" data-act="exitTimer">← Draw</button>
+      <button class="btn${soundOn()?"":" primary"}" data-act="soundTest">${soundOn()?"🔔 Sound on · test":"🔕 Tap to turn sound on"}</button></div>
+    <div class="tkclock"><div class="eyebrow">${esc(i.sub)}</div><div class="tklbl">${esc(i.lbl)}</div><div class="tkcd num" id="tkcd">${i.cd||"&nbsp;"}</div>
+      ${paused?`<div class="tkpaused">Paused</div>`:""}</div>
+    <div class="tkbtns">
+      ${m?`<button class="btn primary big" data-act="${m.act}"${m.confirm?` data-confirm="${esc(m.confirm)}"`:""}>${esc(m.label)}</button>`:`<p class="sub">${p.kind==="db"?"Dreambreakers in play. Scores are entered on the scorers' phones.":"All done."}</p>`}
+      <div class="tkrow">
+        ${paused?`<button class="btn primary" data-act="tResume">▶ Resume</button>`:`<button class="btn" data-act="tPause"${!S.clk||p.kind==="db"||p.kind==="done"?" disabled":""}>❚❚ Pause</button>`}
+        ${inPlay(p)?`<button class="btn" data-act="tRestart">↺ Restart game</button>`:""}
+        ${S.clkPrev!==undefined?`<button class="btn" data-act="tUndo">↶ Undo last</button>`:""}
+      </div>
+      <p class="sub tkhelp">${next}</p>
+    </div>
+  </div></main>`;
 }
 
 /* ----- TV ----- */
@@ -1045,7 +1127,7 @@ function fitTV(){
 window.addEventListener("resize",()=>{if(isTV())fitTV()});
 function tvView(){
   const st=stats(), c=S.clubs;
-  const {p,lbl,sub,cd,cls}=phaseInfo(st);
+  const {p,lbl,sub,cls}=phaseInfo(st), cd=phaseInfo(st).p.kind==="over"?"":phaseInfo(st).cd;
   const showG=p.kind==="done"?3:p.game;
   const isDB=p.round===DB;
   const ms=isDB?[]:matches().filter(m=>m.r===p.round).sort((a,b)=>a.court-b.court);
@@ -1088,7 +1170,7 @@ function tvView(){
         <div class="tvcourts${isDB?" db":""}">${courts}</div>
       </div>
     </div>
-    <div class="tvexit">${canControl()?(S.pausedAt!=null?`<button data-act="tResume">▶ Resume</button>`:`<button data-act="tPause">❚❚ Pause</button>`)+`<button data-act="tRestart">↺ Restart</button>`+(p.kind!=="done"&&p.kind!=="db"?`<button data-act="tSkip">⏭ Skip</button>`:""):""}<button data-act="fs">Full screen</button><button data-act="exitTv">Exit TV</button></div>
+    <div class="tvexit">${canControl()?(S.pausedAt!=null?`<button data-act="tResume">▶ Resume</button>`:`<button data-act="tPause">❚❚ Pause</button>`)+`<button data-act="timerPage">⏱ Timer</button>`:""}<button data-act="fs">Full screen</button><button data-act="exitTv">Exit TV</button></div>
   </div>`;
 }
 
@@ -1125,7 +1207,7 @@ function pdfSchedule(doc){
     pdfHead(doc,`Game schedule - Round ${r}`,`Round ${r} of ${ROUNDS}, then the dreambreakers`);
     let y=27;
     doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...C_MUTED);
-    doc.text(TX(`Timed ${E().gameMin}-minute games, most points wins. ${E().gapMin} minutes between games${r<ROUNDS?`, then a ${E().breakMin}-minute break before Round ${r+1}`:""}. (C) = captain.`),10,y,{maxWidth:190});
+    doc.text(TX(`Timed ${E().gameMin}-minute games, most points wins. If level at time, play a golden point. ${E().gapMin} minutes between games${r<ROUNDS?`, then a ${E().breakMin}-minute break before Round ${r+1}`:""}. (C) = captain.`),10,y,{maxWidth:190});
     doc.setTextColor(...C_INK); y+=5;
     {doc.setFont("helvetica","bold");doc.setFontSize(8.5);
       doc.text(TX(`Program:  ${fmtT(timeOn(E().arrive))} arrival & warm-up  -  ${fmtT(timeOn(E().briefing))} briefing & welcome  -  ${st.map((t,i)=>`${fmtT(t)} Round ${i+1}`).join("  -  ")}  -  ${fmtT(dbStart())} Dreambreakers  -  BBQ lunch`),10,y,{maxWidth:190});
@@ -1228,7 +1310,7 @@ function pdfCourtSheets(doc,first){
     pdfHead(doc,`Court ${c}`,ratings);
     doc.setFont("helvetica","bold");doc.setFontSize(64);doc.setTextColor(225,229,236);doc.text(String(c),200,52,{align:"right"});doc.setTextColor(...C_INK);
     doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(...C_MUTED);
-    doc.text(TX(`Games on this court today. ${E().gameMin}-minute timed games. (C) = captain.`),10,28,{maxWidth:150});
+    doc.text(TX(`Games on this court today. ${E().gameMin}-minute timed games; if level at time, play a golden point. (C) = captain.`),10,28,{maxWidth:150});
     doc.setTextColor(...C_INK);
     let y=40;
     doc.setFillColor(...C_GREY);doc.rect(10,y,190,6,"F");doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...C_MUTED);
@@ -1292,7 +1374,7 @@ function pdfResults(doc){
     doc.setFontSize(30);clubText(doc,sd,String(t.w),x,y+19);
     doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);
     doc.text(TX(`Games won  -  ${S.divisions.map(d=>`${d.name}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
-    doc.text(TX(`Points ${t.pf}${t.d?`  -  ${t.d} drawn`:""}`),x+20,y+19);doc.setTextColor(...C_INK);
+    doc.text(TX(`Points ${t.pf}`),x+20,y+19);doc.setTextColor(...C_INK);
   });
   y+=27;
   // dreambreakers
@@ -1305,8 +1387,8 @@ function pdfResults(doc){
   S.divisions.forEach(d=>{
     doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${d.name} teams`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(d.dupr),48,y);doc.setTextColor(...C_INK);y+=2;
     const rows=rank(Object.values(st.team).filter(t=>t.k.startsWith(d.id+"-")));
-    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Team",x:20,w:60},{h:"Ties W-L",x:84,w:18,align:"center"},{h:"W",x:106,w:12,align:"right"},{h:"D",x:120,w:12,align:"right"},{h:"L",x:134,w:12,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:184,w:14,align:"right"}],
-      rows.map((t,i)=>[i+1,{t:S.teams[t.k].name,b:1,side:sideOf(t.k)},`${t.tw}-${t.tl}${t.tt?`-${t.tt}`:""}`,t.w,t.d,t.l,t.pf,t.pa,{t:sgn(t.pf-t.pa),b:1}]));
+    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Team",x:20,w:60},{h:"Ties W-L",x:84,w:18,align:"center"},{h:"W",x:106,w:12,align:"right"},{h:"L",x:126,w:12,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:184,w:14,align:"right"}],
+      rows.map((t,i)=>[i+1,{t:S.teams[t.k].name,b:1,side:sideOf(t.k)},`${t.tw}-${t.tl}`,t.w,t.l,t.pf,t.pa,{t:sgn(t.pf-t.pa),b:1}]));
     y+=6;
   });
   pdfFoot(doc);
@@ -1316,8 +1398,8 @@ function pdfResults(doc){
   S.divisions.forEach(d=>{
     doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${d.name} players`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(d.dupr),50,y);doc.setTextColor(...C_INK);y+=2;
     const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
-    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Player",x:20,w:62},{h:"Team",x:86,w:40},{h:"W",x:132,w:10,align:"right"},{h:"D",x:146,w:10,align:"right"},{h:"L",x:160,w:10,align:"right"},{h:"+/-",x:180,w:18,align:"right"}],
-      rows.map((p,i)=>[i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.d,p.l,{t:sgn(p.pf-p.pa),b:1}]),{rh:5.9});
+    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Player",x:20,w:62},{h:"Team",x:86,w:40},{h:"W",x:140,w:10,align:"right"},{h:"L",x:158,w:10,align:"right"},{h:"+/-",x:180,w:18,align:"right"}],
+      rows.map((p,i)=>[i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.l,{t:sgn(p.pf-p.pa),b:1}]),{rh:5.9});
     y+=7;
   });
   pdfFoot(doc);
@@ -1404,6 +1486,7 @@ function render(){
     </div></div>${missing?loginBox():""}</main>${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;return}
   if(scorerDiv()){app.innerHTML=scorerView(scorerDiv())+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
   if(isTV()&&!comingSoon()){app.innerHTML=tvView();fitTV();return}
+  if(isTimer()){app.innerHTML=timerPage()+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
   const st=stats();
   if(tab==="setup"&&!editing()) tab="draw";
   let banners="";
@@ -1508,12 +1591,13 @@ document.addEventListener("click",e=>{
   const t=e.target.closest("[data-tab],[data-div],[data-act],[data-start]"); if(!t) return;
   if(t.dataset.tab){tab=t.dataset.tab;ss.set("tab",tab);render();window.scrollTo(0,0);return}
   if(t.dataset.div){divFilter=t.dataset.div;ls.set("divFilter",divFilter);render();return}
-  if(t.dataset.start){const r=+t.dataset.start;S.roundStart={...(S.roundStart||{})};
-    const nowMin=Math.floor(Date.now()/60000)*60000;S.roundStart[r]=nowMin;for(let x=r+1;x<=DB;x++)delete S.roundStart[x];delete S.pausedAt;save(CTRL);return}
+  if(t.dataset.start){const r=+t.dataset.start;
+    if(t.dataset.armed){clkSet({r,g:1,st:"run",t0:Date.now()});return}
+    t.dataset.armed="1";t.textContent=`Tap again to start round ${r}`;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   const a=t.dataset.act;
   if(a==="tv"){location.hash="tv";return}
   if(a==="dbStart"){
-    if(t.dataset.armed){S.roundStart={...(S.roundStart||{}),[DB]:Math.floor(Date.now()/1000)*1000};delete S.pausedAt;save(CTRL);return}
+    if(t.dataset.armed){startDreambreakers();return}
     t.dataset.armed="1";t.textContent="Tap again to start the dreambreakers";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="dbShuffle"){
     if(t.dataset.armed){dbShuffle(t.dataset.d);save(CTRL);return}
@@ -1523,13 +1607,21 @@ document.addEventListener("click",e=>{
   if(a==="exitScore"){history.replaceState(null,"",location.pathname+location.search);tab="draw";onHash();return}
   if(a==="exitTv"){history.replaceState(null,"",location.pathname+location.search);onHash();return}
   if(a==="fs"){const el=document.documentElement;(document.fullscreenElement?document.exitFullscreen():el.requestFullscreen?.())?.catch?.(()=>{});return}
-  if(a==="save"){save();return}
+  if(a==="save"){if(!scoresOk())return;save();return}
   if(a==="pdf"){const k=t.dataset.kind,txt=t.textContent;t.disabled=true;t.textContent="Building PDF…";makeSheets(k).finally(()=>{t.disabled=false;t.textContent=txt});return}
   if(a==="tPause"){timerPause();return}
   if(a==="tResume"){timerResume();return}
-  if(a==="tSkip"){
-    if(t.dataset.armed){timerSkip();return}
-    t.dataset.armed="1";t.textContent=phase().kind==="pre"?"Tap again to start Round 1":"Tap again to skip";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
+  if(a==="soundTest"){unlockAudio();setTimeout(()=>{beeps(1,.25);buzz(200);render()},150);return}
+  if(a==="tStart"){timerStart();return}
+  if(a==="tNext"){
+    if(!t.dataset.confirm||t.dataset.armed){timerNext();return}
+    t.dataset.armed="1";t.textContent=t.dataset.confirm;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
+  if(a==="tFinish"||a==="tStartDb"){
+    if(t.dataset.armed){a==="tFinish"?timerFinish():startDreambreakers();return}
+    t.dataset.armed="1";t.textContent=t.dataset.confirm||"Tap again";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
+  if(a==="tUndo"){timerUndo();return}
+  if(a==="timerPage"){location.hash="timer";window.scrollTo(0,0);return}
+  if(a==="exitTimer"){history.replaceState(null,"",location.pathname+location.search);tab="draw";onHash();return}
   if(a==="tRestart"){
     if(t.dataset.armed){timerRestartGame();return}
     t.dataset.armed="1";t.textContent="Tap again to restart";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
@@ -1552,7 +1644,7 @@ document.addEventListener("click",e=>{
   if(a==="toggleCommittee"){committee=!committee;ls.set("committee",committee?"on":"off");render();return}
   if(a==="clearDemo"){clearAllScores();return}
   if(a==="undoClear"){undoClear();return}
-  if(a==="resetTimes"){S.roundStart={};delete S.pausedAt;save(CTRL);return}
+  if(a==="resetTimes"){S.roundStart={};delete S.clk;delete S.clkPrev;delete S.pausedAt;save(CTRL);return}
   if(a==="clearScores"){
     if(t.dataset.armed){clearAllScores();return}
     t.dataset.armed="1";t.textContent="Tap again to clear every score";$("#clearConfirm").textContent="You can undo this straight after.";return}
@@ -1561,7 +1653,7 @@ document.addEventListener("input",e=>{
   const el=e.target;
   if(el.dataset.g){const k=el.dataset.g;const v=S.scores[k]?[...S.scores[k]]:["",""];v[+el.dataset.i]=el.value===""?"":Math.max(0,Math.min(99,parseInt(el.value,10)||0));
     if(v[0]===""&&v[1]==="") delete S.scores[k]; else S.scores[k]=v;
-    dirty.set(k,["scores",k]); document.querySelectorAll(`[data-g="${k}"]`).forEach(x=>x.classList.add("changed")); refreshSaveBar(); return}
+    dirty.set(k,["scores",k]); const lvl=v[0]!==""&&v[1]!==""&&+v[0]===+v[1]; document.querySelectorAll(`[data-g="${k}"]`).forEach(x=>{x.classList.add("changed");x.classList.toggle("tie",lvl)}); refreshSaveBar(); return}
   if(el.dataset.team){const t=S.teams[el.dataset.team]; if(el.dataset.p!=null) t.players[+el.dataset.p]=el.value; else t.name=el.value; dirty.set(el.id,["teams",el.dataset.team]); refreshSaveBar(); return}
   if(el.dataset.path){const parts=el.dataset.path.split("."); let o=S; for(let i=0;i<parts.length-1;i++) o=o[parts[i]];
     const last=parts[parts.length-1]; o[last]=el.type==="number"?Math.max(0,parseInt(el.value,10)||0):el.value; dirty.set(el.id,parts[0]==="divisions"?["divisions"]:parts); refreshSaveBar(); return}
@@ -1576,22 +1668,26 @@ document.addEventListener("change",e=>{
 let wake=null;
 async function onHash(){
   render();
-  if(isTV()||scorerDiv()){try{wake=await navigator.wakeLock?.request("screen")}catch(e){}}
+  if(isTV()||scorerDiv()||isTimer()){try{wake=await navigator.wakeLock?.request("screen")}catch(e){}}
   else {try{await wake?.release()}catch(e){} wake=null}
 }
 window.addEventListener("hashchange",onHash);
 
 /* tick: TV every second */
-let lastPhase=JSON.stringify(phase());
+let lastPhase=(()=>{const p=phase();return JSON.stringify({k:p.kind,r:p.round,g:p.game})})();
 setInterval(()=>{
   const p=phase(),ps=JSON.stringify({k:p.kind,r:p.round,g:p.game});
+  if(isTimer()&&ps!==lastPhase){const was=JSON.parse(lastPhase).k;
+    if(p.kind==="over"&&was!=="over") alertEndOfGame();
+    else if((was==="gap"||was==="brk")&&p.kind==="ready") alertNextReady();}
   if(isTV()){
     if(ps!==lastPhase){lastPhase=ps;render();return}
-    const cd=$("#tvcd"); if(cd&&p.until&&p.kind!=="pre") cd.textContent=mmss(p.until-nowT());
+    const cd=$("#tvcd"); if(cd) cd.textContent=p.kind==="over"?"":cdText(p);
     const ph=$(".tvphase"); if(ph&&p.kind==="game") ph.classList.toggle("low",p.until-nowT()<60000);
     const n=$("#tvnow"); if(n) n.textContent=new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   } else {
-    const c2=$("#ctlcd"); if(c2&&p.until&&p.kind!=="pre") c2.textContent=mmss(p.until-nowT());
+    const c2=$("#ctlcd"); if(c2) c2.textContent=cdText(p);
+    const c3=$("#tkcd"); if(c3) c3.textContent=cdText(p)||"\u00a0";
     if(ps!==lastPhase){lastPhase=ps; if(!dirty.size) render();}
   }
 },1000);
