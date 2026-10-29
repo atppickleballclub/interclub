@@ -1204,7 +1204,7 @@ function pdfHead(doc,title,sub){
   const W=210;doc.setFillColor(...C_NAVY);doc.rect(0,0,W,18,"F");
   doc.setFillColor(...C_ATP);doc.rect(0,18,W/2,1.6,"F");doc.setFillColor(...C_DURAL);doc.rect(W/2,18,W/2,1.6,"F");
   doc.setTextColor(...C_LIME);doc.setFont("helvetica","bold");doc.setFontSize(7.5);
-  doc.text(TX(`${E().name} - ${S.clubs.h.name} v ${S.clubs.a.name}`).toUpperCase(),10,6.5);
+  doc.text(TX(`${E().name} - ${S.clubs.h.short} v ${S.clubs.a.short}`).toUpperCase(),10,6.5);
   doc.setTextColor(255,255,255);doc.setFontSize(15);doc.text(TX(title),10,14);
   doc.setFont("helvetica","normal");doc.setFontSize(8.5);
   const when=E().date?new Date(E().date+"T00:00").toLocaleDateString([], {weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
@@ -1212,21 +1212,16 @@ function pdfHead(doc,title,sub){
   if(sub) doc.text(TX(sub),200,14,{align:"right"});
   doc.setTextColor(...C_INK);
 }
-function pdfFoot(doc){doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(TX(`Printed ${new Date().toLocaleString()}  -  timings: ${E().gameMin}-min games, ${E().gapMin} min between games, ${E().breakMin} min between rounds`),105,292,{align:"center"});doc.setTextColor(...C_INK)}
+function pdfFoot(doc){doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(TX(`Printed ${new Date().toLocaleString()}`),105,292,{align:"center"});doc.setTextColor(...C_INK)}
+function fitSize(doc,str,maxW,size){doc.setFontSize(size);while(size>7&&doc.getTextWidth(TX(str))>maxW){size-=.5;doc.setFontSize(size)}}   // shrink long names so they never reach the "v"
 function clubText(doc,side,str,x,y,opt){doc.setTextColor(...(side==="h"?C_ATP:C_DURAL));doc.text(TX(str),x,y,opt);doc.setTextColor(...C_INK)}
 
 function pdfSchedule(doc){
   const st=roundStarts(), ms=matches();
   for(let r=1;r<=ROUNDS;r++){
     if(r>1) doc.addPage();
-    pdfHead(doc,`Game schedule - Round ${r}`,`Round ${r} of ${ROUNDS}, then the dreambreakers`);
+    pdfHead(doc,`Game schedule - Round ${r}`,`Round ${r} of ${ROUNDS}  -  (C) = captain`);
     let y=27;
-    doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...C_MUTED);
-    doc.text(TX(`Timed ${E().gameMin}-minute games, most points wins. If level at time, play a golden point. ${E().gapMin} minutes between games${r<ROUNDS?`, then a ${E().breakMin}-minute break before Round ${r+1}`:""}. (C) = captain.`),10,y,{maxWidth:190});
-    doc.setTextColor(...C_INK); y+=5;
-    {doc.setFont("helvetica","bold");doc.setFontSize(8.5);
-      doc.text(TX(`Program:  ${fmtT(timeOn(E().arrive))} arrival & warm-up  -  ${fmtT(timeOn(E().briefing))} briefing & welcome  -  ${st.map((t,i)=>`${fmtT(t)} Round ${i+1}`).join("  -  ")}  -  ${fmtT(dbStart())} Dreambreakers  -  BBQ lunch`),10,y,{maxWidth:190});
-      doc.setFont("helvetica","normal"); y+=6;}
     const list=ms.filter(m=>m.r===r).sort((a,b)=>a.court-b.court);
     for(let g=1;g<=3;g++){
       doc.setFillColor(...C_NAVY);doc.rect(10,y,190,8,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(12);
@@ -1240,7 +1235,7 @@ function pdfSchedule(doc){
         doc.setTextColor(...C_INK);doc.setFontSize(15);doc.text(String(m.court),19,y+7.4);
         doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(TX(m.div.dupr),30,y+7);
         doc.text(TX(S.teams[m.h].name),56,y+3.6);doc.text(TX(S.teams[m.a].name),198,y+3.6,{align:"right"});
-        doc.setFont("helvetica","bold");doc.setFontSize(10.5);clubText(doc,"h",`${h1} & ${h2}`,56,y+8.6);clubText(doc,"a",`${a1} & ${a2}`,198,y+8.6,{align:"right"});
+        doc.setFont("helvetica","bold");fitSize(doc,`${h1} & ${h2}`,66,10.5);clubText(doc,"h",`${h1} & ${h2}`,56,y+8.6);fitSize(doc,`${a1} & ${a2}`,66,10.5);clubText(doc,"a",`${a1} & ${a2}`,198,y+8.6,{align:"right"});
         doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(...C_MUTED);doc.text("v",127,y+8.6,{align:"center"});doc.setTextColor(...C_INK);
         y+=rh;
       });
@@ -1277,13 +1272,13 @@ function pdfDreambreaker(doc){
 }
 
 function pdfScoreCards(doc,first){
-  const ms=matches();
-  for(let r=1;r<=ROUNDS;r++){
-    if(!first||r>1) doc.addPage();
-    pdfHead(doc,`Score cards - Round ${r}`,"Hand in at the tournament desk");
-    const list=ms.filter(m=>m.r===r).sort((a,b)=>a.court-b.court);
+  const ms=matches(), courts=[...new Set(ms.map(m=>m.court))].sort((a,b)=>a-b);
+  courts.forEach((c,ci)=>{
+    if(!first||ci>0) doc.addPage();
+    const list=ms.filter(m=>m.court===c).sort((a,b)=>a.r-b.r);
+    pdfHead(doc,`Score cards - Court ${c}`,"Hand in at the tournament desk after each round");
     list.forEach((m,i)=>{
-      const x=8+(i%2)*99, y=25+Math.floor(i/2)*89, w=95, h=85;
+      const r=m.r, x=8, y=24+i*88, w=194, h=85, nw=w/2-24;
       doc.setDrawColor(150,156,170);doc.setLineWidth(.35);doc.roundedRect(x,y,w,h,2,2,"S");
       doc.setFillColor(...C_NAVY);doc.rect(x,y,w,9,"F");
       doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(`ROUND ${r}  -  COURT ${m.court}`,x+3,y+6.2);
@@ -1299,8 +1294,8 @@ function pdfScoreCards(doc,first){
         doc.setDrawColor(210,214,222);doc.line(x+2,ty+rh,x+w-2,ty+rh);
         doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text(`G${g}`,x+3.5,ty+5);
         doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(`Pairs ${pairLabel(g)}`,x+3.5,ty+9);doc.setTextColor(...C_INK);
-        doc.setFontSize(7.5);doc.text(h1,x+18,ty+5,{maxWidth:24});doc.text(h2,x+18,ty+9,{maxWidth:24});
-        doc.text(a1,x+w-3.5,ty+5,{align:"right",maxWidth:24});doc.text(a2,x+w-3.5,ty+9,{align:"right",maxWidth:24});
+        doc.setFontSize(9);doc.text(h1,x+18,ty+5,{maxWidth:nw});doc.text(h2,x+18,ty+9.5,{maxWidth:nw});
+        doc.text(a1,x+w-3.5,ty+5,{align:"right",maxWidth:nw});doc.text(a2,x+w-3.5,ty+9.5,{align:"right",maxWidth:nw});
         doc.setDrawColor(...C_INK);doc.setLineWidth(.4);doc.rect(x+w/2-12,ty+1.8,10,8.4);doc.rect(x+w/2+2,ty+1.8,10,8.4);
         doc.setFontSize(9);doc.text("-",x+w/2,ty+7,{align:"center"});doc.setLineWidth(.35);
         ty+=rh;
@@ -1312,12 +1307,12 @@ function pdfScoreCards(doc,first){
       doc.text(TX(`${S.clubs.h.short} captain`),x+3.5,ty+9);doc.text(TX(`${S.clubs.a.short} captain`),x+w/2+3,ty+9);doc.setTextColor(...C_INK);
     });
     pdfFoot(doc);
-  }
+  });
   doc.addPage(); pdfDreambreaker(doc);
 }
 
 function pdfCourtSheets(doc,first){
-  const ms=matches(), courts=[...new Set([...ms.map(m=>m.court),...S.divisions.map(d=>S.courts[`db-${d.id}`])])].sort((a,b)=>a-b);
+  const ms=matches(), courts=[...new Set(ms.map(m=>m.court))].sort((a,b)=>a-b);
   courts.forEach((c,ci)=>{
     if(!first||ci>0) doc.addPage();
     const mine=ms.filter(m=>m.court===c).sort((a,b)=>a.r-b.r);
@@ -1339,22 +1334,13 @@ function pdfCourtSheets(doc,first){
         if(g===1){doc.setFillColor(...C_NAVY);doc.rect(10,y,190,6,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(8.5);
           doc.text(TX(`ROUND ${m.r}   ${S.teams[m.h].name}  v  ${S.teams[m.a].name}`),12,y+4.2);doc.setTextColor(...C_INK);y+=6}
         doc.setDrawColor(210,214,222);doc.setLineWidth(.3);doc.line(10,y+rh,200,y+rh);
-        doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text(`R${m.r} G${g}`,12,y+10);
+        doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text(`G${g}`,12,y+10);
         doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(`Players ${pairLabel(g)}`,34,y+10);doc.setTextColor(...C_INK);
         doc.setFont("helvetica","bold");doc.setFontSize(12);clubText(doc,"h",h1,56,y+7.5);clubText(doc,"h",h2,56,y+13);
         doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(...C_MUTED);doc.text("v",128,y+10.3,{align:"center"});
         doc.setFont("helvetica","bold");doc.setFontSize(12);clubText(doc,"a",a1,198,y+7.5,{align:"right"});clubText(doc,"a",a2,198,y+13,{align:"right"});
         y+=rh;
       }
-    });
-    S.divisions.filter(d=>S.courts[`db-${d.id}`]===c).forEach(d=>{
-      doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(`Break - ${E().breakMin} minutes`),105,y+4.3,{align:"center"});y+=6.5;
-      doc.setFillColor(...C_LIME);doc.rect(10,y,190,6,"F");doc.setTextColor(...C_NAVY);doc.setFont("helvetica","bold");doc.setFontSize(8.5);
-      doc.text(TX(`DREAMBREAKER   ${d.name} - ${d.dupr}`),12,y+4.2);y+=6;doc.setTextColor(...C_INK);
-      doc.setFontSize(14);doc.text("LAST",12,y+10);
-      doc.setFont("helvetica","normal");doc.setFontSize(9);
-      doc.text(TX(`All 9 players from each club, rally scoring to 25, rotate every 5 points until 21. Starting: ${dbTxt(d,"h").slice(0,2).join(" & ")} v ${dbTxt(d,"a").slice(0,2).join(" & ")}`),34,y+6,{maxWidth:164});
-      y+=17;
     });
     pdfFoot(doc);
   });
