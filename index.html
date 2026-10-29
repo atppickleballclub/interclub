@@ -314,6 +314,7 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .tvdb li.start{color:var(--lime);font-weight:600}
 .timerbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--lime);border-radius:10px;padding:12px 16px}
 .timerbar.ph-paused{border-left-color:var(--gold)}
+.timerbar.view .tcd:empty{display:none}
 .timerbar .tinfo{display:grid;gap:2px;flex:1;min-width:180px}
 .timerbar .tinfo b{font-family:var(--display);font-size:22px;font-style:italic;text-transform:uppercase}
 .timerbar .tcd{font-family:var(--display);font-size:40px;font-weight:700;line-height:1;color:var(--lime)}
@@ -693,7 +694,7 @@ function dbCard(d,p){
 function drawTab(){
   const p=phase(), ms=matches(), st=roundStarts();
   const divs=S.divisions.filter(d=>divFilter==="all"||divFilter===d.id);
-  let html=(editing()?timerControls():"")+programHTML()+`<div class="chips" role="group" aria-label="Division">
+  let html=(editing()?timerControls():timerView())+programHTML()+`<div class="chips" role="group" aria-label="Division">
     <button class="chip" data-div="all" aria-pressed="${divFilter==="all"}">Both divisions</button>
     ${S.divisions.map(d=>`<button class="chip" data-div="${d.id}" aria-pressed="${divFilter===d.id}">${esc(d.name)} · ${esc(d.dupr)}</button>`).join("")}
   </div>`;
@@ -1054,6 +1055,12 @@ function timerFinish(){
   clkSet(c.g<3?{r:c.r,g:c.g,st:"gap",t0:Date.now()}:{r:c.r,g:3,st:"brk",t0:Date.now()});
 }
 function startDreambreakers(){S.roundStart={...(S.roundStart||{}),[DB]:Math.floor(Date.now()/1000)*1000};delete S.pausedAt;save(CTRL);}
+function timerView(){   // players: read-only clock, no count-up once time is up
+  const i=phaseInfo(), over=i.p.kind==="over";
+  return `<div class="timerbar view ${i.cls}">
+    <div class="tinfo"><span class="eyebrow">${esc(i.sub)}</span><b>${esc(over?"End of game":i.lbl)}</b></div>
+    <div class="tcd num" id="pcd">${over?"":i.cd}</div></div>`;
+}
 function timerControls(){
   const i=phaseInfo(), p=i.p, paused=S.pausedAt!=null, m=mainAction(p);
   return `<div class="timerbar ${i.cls}">
@@ -1697,6 +1704,7 @@ setInterval(()=>{
     const n=$("#tvnow"); if(n) n.textContent=new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   } else {
     const c2=$("#ctlcd"); if(c2) c2.textContent=cdText(p);
+    const c4=$("#pcd"); if(c4) c4.textContent=p.kind==="over"?"":cdText(p);
     const c3=$("#tkcd"); if(c3) c3.textContent=cdText(p)||"\u00a0";
     if(ps!==lastPhase){lastPhase=ps; if(!dirty.size) render();}
   }
