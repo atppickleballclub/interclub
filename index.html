@@ -400,6 +400,7 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .szrally .szh{background:#2459C9} .szrally .szh:hover{filter:brightness(1.08)}
 .szrally .sza{background:#2A7F27} .szrally .sza:hover{filter:brightness(1.08)}
 .szrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.startgrp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.startgrp .btn{padding:6px 12px}
 
 /* committee login */
 .loginbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;padding-top:24px;border-top:1px solid var(--line)}
@@ -734,7 +735,7 @@ function drawTab(){
     const end=st[r-1]+roundLen()*60000;
     html+=`<section class="round" id="round-${r}">
       <div class="roundhead"><h2>Round ${r}</h2>${pill}
-      ${editing()?`<button class="btn" data-start="${r}" style="margin-left:auto">Start round ${r} now</button>`:""}</div>
+      ${editing()?`<span class="startgrp" style="margin-left:auto"><span class="sub">Start now:</span>${[1,2,3].map(g=>`<button class="btn" data-start="${r}" data-g="${g}" aria-label="Start round ${r} game ${g} now">Game ${g}</button>`).join("")}</span>`:""}</div>
       ${divs.map(d=>`<div class="divlabel">${esc(d.name)} · ${esc(d.dupr)}</div>
         <div class="matches">${ms.filter(m=>m.r===r&&m.div.id===d.id).sort((a,b)=>a.court-b.court).map(m=>matchCard(m,p)).join("")}</div>`).join("")}
     </section>`;
@@ -1153,11 +1154,11 @@ function timerPage(){
 
 /* ----- Sausage Sizzle Showdown: lunch exhibition, 2 v 2, side-out scoring, first to 15, win by 2 ----- */
 const SZ_IMG={grill:"sz-grill.webp",mascot:"sz-mascot.webp",snag:"sz-snag.webp"};
-const SZ_COURT=`<svg aria-hidden="true" class="szabs" style="left:0;top:0" width="1280" height="720" viewBox="0 0 1280 720">
-    <rect x="0" y="0" width="1280" height="260.0" fill="#9FD3F2"/>
-    <rect x="0" y="140.0" width="1280" height="120" fill="#1E4D33"/>
-    <path d="M0 140.0 L1280 140.0" stroke="#163A26" stroke-width="6"/>
-    <rect x="0" y="260.0" width="1280" height="460.0" fill="#2F7D4E"/>
+const SZ_COURT=`<svg aria-hidden="true" class="szabs szcourt" style="left:0;top:0" width="1280" height="720" viewBox="0 0 1280 720" preserveAspectRatio="none">
+    <rect x="-4000" y="-4000" width="9280" height="4260" fill="#9FD3F2"/>
+    <rect x="-4000" y="140.0" width="9280" height="120" fill="#1E4D33"/>
+    <path d="M-4000 140.0 L5280 140.0" stroke="#163A26" stroke-width="6"/>
+    <rect x="-4000" y="260.0" width="9280" height="4460" fill="#2F7D4E"/>
     <polygon points="-1973.3,1005.6 3253.3,1005.6 976.0,260.0 304.0,260.0" fill="#2F7D4E"/>
     <polygon points="-60.0,700.0 1340.0,700.0 809.0,282.8 471.0,282.8" fill="#1F5FA8"/>
     <polygon points="302.1,415.5 977.9,415.5 867.9,329.1 412.1,329.1" fill="#2A6FBF"/>
@@ -1193,6 +1194,7 @@ function szBoard(){
     :(z.sc.h>=14&&z.sc.h===z.sc.a)?`<div class="szabs szbanner wb2">WIN BY 2</div>`:"";
   return `<div class="szb" role="img" aria-label="Sausage Sizzle Showdown: ${esc(szTeam("h"))} ${z.sc.h}, ${esc(szTeam("a"))} ${z.sc.a}">
     ${SZ_COURT}
+    <div class="szabs szinner" style="left:0;top:0;width:1280px;height:720px">
     <img class="szabs" src="${SZ_IMG.grill}" alt="" style="left:380px;top:24px;width:900px;height:auto">
     <div class="szabs" aria-hidden="true" style="left:809px;top:156px;width:4px;height:168px;background:#5A5A62;border-radius:2px"></div>
     <div class="szabs szbox" style="left:522px;top:146px;width:288px"><div class="szname">${esc(szTeam("h"))}</div><div class="sznum${z.srv==="h"?" on":""}">${z.sc.h}</div></div>
@@ -1201,12 +1203,16 @@ function szBoard(){
     <div class="szabs szcall">${szCall(z)}</div>
     <img class="szabs" src="${SZ_IMG.mascot}" alt="" style="left:30px;top:200px;width:320px;height:auto;transform:perspective(1800px) rotateY(10deg)">
     ${banner}
+    </div>
     ${z.win?`<div class="szabs szwin"><img src="${SZ_IMG.mascot}" alt=""><h2>${esc(szTeam(z.win))} WIN!</h2></div>`:""}
   </div>`;
 }
 function fitSz(){document.querySelectorAll(".szstage,.sztv").forEach(st=>{const b=st.querySelector(".szb");if(!b)return;
-  const w=st.clientWidth,h=st.clientHeight,k=Math.min(w/1280,h/720);
-  b.style.transform=`translate(${(w-1280*k)/2}px,${(h-720*k)/2}px) scale(${k})`;})}
+  // fill any screen shape: the scene stays 1280x720 in the middle and the sky, fence and court stretch out to the edges
+  const w=st.clientWidth,h=st.clientHeight,k=Math.min(w/1280,h/720),bw=w/k,bh=h/k,ox=(bw-1280)/2,oy=(bh-720)/2;
+  b.style.width=bw+"px";b.style.height=bh+"px";b.style.transform=`scale(${k})`;
+  const c=b.querySelector(".szcourt");if(c){c.setAttribute("width",bw);c.setAttribute("height",bh);c.setAttribute("viewBox",`${-ox} ${-oy} ${bw} ${bh}`)}
+  const i=b.querySelector(".szinner");if(i){i.style.left=ox+"px";i.style.top=oy+"px"}})}
 window.addEventListener("resize",()=>{if(isSizzle()||isTV())fitSz()});
 function szTvView(){return `<div class="sztv">${szBoard()}</div><div class="tvexit">${canControl()?`<button data-act="szPage">Scorer</button>`:""}<button data-act="fs">⛶ Full screen</button><button data-act="exitTv">✕ Exit</button></div>`}
 function szCard(){const z=szState();
@@ -1708,9 +1714,9 @@ document.addEventListener("click",e=>{
   const t=e.target.closest("[data-tab],[data-div],[data-act],[data-start]"); if(!t) return;
   if(t.dataset.tab){tab=t.dataset.tab;ss.set("tab",tab);render();window.scrollTo(0,0);return}
   if(t.dataset.div){divFilter=t.dataset.div;ls.set("divFilter",divFilter);render();return}
-  if(t.dataset.start){const r=+t.dataset.start;
-    if(t.dataset.armed){clkSet({r,g:1,st:"run",t0:Date.now()});return}
-    t.dataset.armed="1";t.textContent=`Tap again to start round ${r}`;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
+  if(t.dataset.start){const r=+t.dataset.start, g=+(t.dataset.g||1);
+    if(t.dataset.armed){clkSet({r,g,st:"run",t0:Date.now()});return}
+    t.dataset.armed="1";t.textContent=`Tap again: round ${r} game ${g}`;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   const a=t.dataset.act;
   if(a==="tv"){location.hash="tv";return}
   if(a==="dbStart"){
