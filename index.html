@@ -6,8 +6,6 @@
 <title>ATP vs Dural Interclub</title>
 <meta name="description" content="Live draw, courts, scores and standings for the ATP v Dural pickleball interclub challenge.">
 <meta name="theme-color" content="#06122b">
-<link rel="icon" href="icons/icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600&display=swap">
@@ -373,6 +371,36 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
+/* ----- Sausage Sizzle Showdown ----- */
+.szstage{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;overflow:hidden;border-radius:12px;background:#000}
+.sztv{position:fixed;inset:0;background:#000;overflow:hidden}
+.szb{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;font-family:'Luckiest Guy','Arial Black',Impact,sans-serif;color:#fff}
+.szabs{position:absolute}
+.szb .szbox{text-align:center}
+.szb .szname{font-size:40px;line-height:1}
+.szb .sznum{font-size:145px;line-height:.95}
+.szb .sznum.on{color:#FFD60A}
+.szb .szsnags{display:flex;gap:10px;top:360px;transition:left .35s ease}
+.szb .szsnags img{width:120px;height:auto}
+.szb .szcall{left:607px;top:446px;width:414px;text-align:center;font-size:48px;line-height:1;color:#1B1B1F}
+.szb .szbanner{left:50%;bottom:28px;transform:translateX(-50%) rotate(-2deg);background:#D7261E;border:5px solid #FFD60A;padding:6px 36px;font-size:46px;letter-spacing:2px;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.szb .szbanner.wb2{background:#FFD60A;color:#1B1B1F;border-color:#D7261E}
+.szb .szwin{inset:0;background:rgba(8,10,14,.82);display:flex;align-items:center;justify-content:center;gap:40px}
+.szb .szwin img{width:330px;height:auto;animation:szhop 1s ease-in-out infinite alternate}
+.szb .szwin h2{margin:0;font-size:120px;line-height:.95;color:#FFD60A;font-weight:400;text-shadow:0 6px 0 #8A2A10}
+@keyframes szhop{to{transform:translateY(-18px) rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.szb .szwin img{animation:none}.szb .szsnags{transition:none}}
+.szp .szwrap{min-height:calc(100dvh - 16px);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding-block:10px}
+.szp .sztop{justify-content:space-between}
+.szp .szstat{font-family:var(--cond,inherit);font-size:17px;font-weight:700;text-align:center}
+.szrally{flex:1;min-height:120px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.szrally .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1;color:#fff;border:0;border-radius:16px;touch-action:manipulation}
+.szrally .btn .szplus{font-size:64px;font-weight:800}
+.szrally .btn small{font-size:18px;font-weight:700;letter-spacing:1px;opacity:.9}
+.szrally .szh{background:#2459C9} .szrally .szh:hover{filter:brightness(1.08)}
+.szrally .sza{background:#2A7F27} .szrally .sza:hover{filter:brightness(1.08)}
+.szrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
 /* committee login */
 .loginbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;padding-top:24px;border-top:1px solid var(--line)}
 .loginbar b{color:var(--ink)}
@@ -634,7 +662,7 @@ function header(st){
     </div>
     ${soon?"":`<nav class="tabs" role="tablist">
       ${tabs.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${tab===k}">${l}</button>`).join("")}
-      ${canControl()?`<button class="tvbtn" data-act="tv">TV display ▸</button>`:""}
+      ${editing()?`<button class="tvbtn" data-act="tv">TV display ▸</button>`:""}
     </nav>`}
   </div></header>`;
 }
@@ -687,7 +715,7 @@ function dbCard(d,p){
   return `<article class="match${live?" isLive":""}">
     <div class="mhead"><span class="court">${courtSel}</span><div class="teams">${esc(d.name)} · ${esc(d.dupr)}</div></div>
     <div class="game"><div class="t"><b>Game</b>To 25</div><div class="pair home"><span class="pn">${esc(S.clubs.h.short)}</span></div>${(()=>{const i=dbInfo(d);return `<div class="score num"><span class="${i.h>=i.a?"w":"l"}">${i.h}</span><span class="muted">–</span><span class="${i.a>=i.h?"w":"l"}">${i.a}</span></div>`})()}<div class="pair away"><span class="pn">${esc(S.clubs.a.short)}</span></div></div>
-    ${canControl()?`<div class="dbopen"><button class="btn primary" data-act="openScore" data-d="${d.id}">Open live scorer for Court ${ct}</button><span class="muted">Hand this to the scorer at the court</span></div>`:""}
+    ${editing()?`<div class="dbopen"><button class="btn primary" data-act="openScore" data-d="${d.id}">Open live scorer for Court ${ct}</button><span class="muted">Hand this to the scorer at the court</span></div>`:""}
     <div class="dbrot"><div><div class="eyebrow atp">${esc(S.clubs.h.short)} rotation</div>${list("h")}</div><div><div class="eyebrow dural">${esc(S.clubs.a.short)} rotation</div>${list("a")}</div></div>
     ${editing()?(()=>{const started=(()=>{const i=dbInfo(d);return i.h+i.a>0})(), custom=!!(S.dbOrder&&S.dbOrder[`${d.id}-h`]);
       return `<div class="dbopen"><button class="btn" data-act="dbShuffle" data-d="${d.id}"${started?" disabled":""}>🔀 Randomise rotation</button>${custom?`<button class="btn" data-act="dbUnshuffle" data-d="${d.id}"${started?" disabled":""}>Back to team order</button>`:""}<span class="muted">${started?"Locked once the game has started":custom?"Random order · reprint the sheets if already printed":"Team order (Team 1, then 2, then 3)"}</span></div>`})():""}
@@ -1015,7 +1043,7 @@ function phaseInfo(st){
 function clkSet(c){S.clkPrev=S.clk?JSON.parse(JSON.stringify(S.clk)):null;if(c)S.clk=c;else delete S.clk;
   if(S.roundStart?.[DB]!=null){S.roundStart={...S.roundStart};delete S.roundStart[DB]}   // back into the rounds
   delete S.pausedAt;save(CTRL);}
-const CTRL=[["roundStart"],["pausedAt"],["dbOrder"],["dbIdx"],["clk"],["clkPrev"]];
+const CTRL=[["roundStart"],["pausedAt"],["dbOrder"],["dbIdx"],["clk"],["clkPrev"],["sizzle"]];
 function timerPause(){if(S.pausedAt!=null||!S.clk)return;S.pausedAt=Date.now();save(CTRL)}
 function timerResume(){
   if(S.pausedAt==null)return;
@@ -1074,6 +1102,7 @@ function timerControls(){
       ${inPlay(p)?`<button class="btn" data-act="tRestart">↺ Restart game ${p.game}</button>`:""}
       ${S.clkPrev!==undefined||S.roundStart?.[DB]!=null?`<button class="btn" data-act="tUndo">↶ Undo</button>`:""}
       <button class="btn" data-act="timerPage">⏱ Timer page</button>
+      <button class="btn" data-act="szPage">🌭 Sausage Sizzle Showdown</button>
     </div></div>`;
 }
 
@@ -1118,6 +1147,88 @@ function timerPage(){
       </div>
       <p class="sub tkhelp">${next}</p>
     </div>
+  </div></main>`;
+}
+
+
+/* ----- Sausage Sizzle Showdown: lunch exhibition, 2 v 2, side-out scoring, first to 15, win by 2 ----- */
+const SZ_IMG={grill:"sz-grill.webp",mascot:"sz-mascot.webp",snag:"sz-snag.webp"};
+const SZ_COURT=`<svg aria-hidden="true" class="szabs" style="left:0;top:0" width="1280" height="720" viewBox="0 0 1280 720">
+    <rect x="0" y="0" width="1280" height="260.0" fill="#9FD3F2"/>
+    <rect x="0" y="140.0" width="1280" height="120" fill="#1E4D33"/>
+    <path d="M0 140.0 L1280 140.0" stroke="#163A26" stroke-width="6"/>
+    <rect x="0" y="260.0" width="1280" height="460.0" fill="#2F7D4E"/>
+    <polygon points="-1973.3,1005.6 3253.3,1005.6 976.0,260.0 304.0,260.0" fill="#2F7D4E"/>
+    <polygon points="-60.0,700.0 1340.0,700.0 809.0,282.8 471.0,282.8" fill="#1F5FA8"/>
+    <polygon points="302.1,415.5 977.9,415.5 867.9,329.1 412.1,329.1" fill="#2A6FBF"/>
+    <path d="M-60.0 700.0 L1340.0 700.0 M1340.0 700.0 L809.0 282.8 M809.0 282.8 L471.0 282.8 M471.0 282.8 L-60.0 700.0 M302.1 415.5 L977.9 415.5 M412.1 329.1 L867.9 329.1 M640.0 700.0 L640.0 415.5 M640.0 329.1 L640.0 282.8" stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linejoin="round"/>
+    <rect x="340.6" y="284.9" width="598.8" height="79" fill="#111114" opacity="0.55"/>
+    <path d="M340.6 284.9 L939.4 284.9" stroke="#FFFFFF" stroke-width="5"/>
+    <path d="M340.6 280.9 L340.6 363.9 M939.4 280.9 L939.4 363.9" stroke="#2B2B30" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="840" cy="668" rx="400" ry="26" fill="#000000" opacity="0.32"/>
+    <ellipse cx="190" cy="664" rx="130" ry="16" fill="#000000" opacity="0.32"/>
+  </svg>`;
+const isSizzle=()=>location.hash==="#sizzle";
+const szOth=t=>t==="h"?"a":"h";
+const szBlank=(first,tv)=>({sc:{h:0,a:0},srv:first,n:2,first,win:null,tv:!!tv,hist:[]});
+const szState=()=>S.sizzle||szBlank("h",false);
+const szCall=z=>`${z.sc[z.srv]} – ${z.sc[szOth(z.srv)]} – ${z.n}`;
+const szTeam=t=>(S.clubs[t].short||S.clubs[t].name).toUpperCase();
+function szRally(t){
+  const z=JSON.parse(JSON.stringify(szState())); if(z.win) return;
+  const hist=z.hist||[]; delete z.hist; hist.push(JSON.stringify(z)); z.hist=hist.slice(-30);
+  if(t===z.srv){ z.sc[t]++; if(z.sc[t]>=15&&z.sc[t]-z.sc[szOth(t)]>=2) z.win=t; }
+  else if(z.n===1) z.n=2;
+  else { z.srv=szOth(z.srv); z.n=1; }
+  S.sizzle=z; save(CTRL);
+}
+function szUndo(){const z=szState(), hist=[...(z.hist||[])], last=hist.pop(); if(!last) return;
+  const prev=JSON.parse(last); prev.hist=hist; prev.tv=z.tv; S.sizzle=prev; save(CTRL);}
+function szNew(){const z=szState(); S.sizzle=szBlank(z.first||"h",z.tv); save(CTRL);}
+function szFirst(t){const z=szState(); if((z.hist||[]).length) return; S.sizzle={...szBlank(t,z.tv)}; save(CTRL);}
+function szShow(on){S.sizzle={...szState(),tv:on}; save(CTRL);}
+function szBoard(){
+  const z=szState(), s=z.sc[z.srv], r=z.sc[szOth(z.srv)];
+  const banner=z.win?"":(s+1>=15&&s+1-r>=2)?`<div class="szabs szbanner">GAME POINT · ${esc(szTeam(z.srv))}</div>`
+    :(z.sc.h>=14&&z.sc.h===z.sc.a)?`<div class="szabs szbanner wb2">WIN BY 2</div>`:"";
+  return `<div class="szb" role="img" aria-label="Sausage Sizzle Showdown: ${esc(szTeam("h"))} ${z.sc.h}, ${esc(szTeam("a"))} ${z.sc.a}">
+    ${SZ_COURT}
+    <img class="szabs" src="${SZ_IMG.grill}" alt="" style="left:380px;top:24px;width:900px;height:auto">
+    <div class="szabs" aria-hidden="true" style="left:809px;top:156px;width:4px;height:168px;background:#5A5A62;border-radius:2px"></div>
+    <div class="szabs szbox" style="left:522px;top:146px;width:288px"><div class="szname">${esc(szTeam("h"))}</div><div class="sznum${z.srv==="h"?" on":""}">${z.sc.h}</div></div>
+    <div class="szabs szbox" style="left:813px;top:146px;width:288px"><div class="szname">${esc(szTeam("a"))}</div><div class="sznum${z.srv==="a"?" on":""}">${z.sc.a}</div></div>
+    <div class="szabs szsnags" style="left:${z.srv==="h"?568:800}px">${`<img src="${SZ_IMG.snag}" alt="">`.repeat(z.n)}</div>
+    <div class="szabs szcall">${szCall(z)}</div>
+    <img class="szabs" src="${SZ_IMG.mascot}" alt="" style="left:30px;top:200px;width:320px;height:auto;transform:perspective(1800px) rotateY(10deg)">
+    ${banner}
+    ${z.win?`<div class="szabs szwin"><img src="${SZ_IMG.mascot}" alt=""><h2>${esc(szTeam(z.win))} WIN!</h2></div>`:""}
+  </div>`;
+}
+function fitSz(){document.querySelectorAll(".szstage,.sztv").forEach(st=>{const b=st.querySelector(".szb");if(!b)return;
+  const w=st.clientWidth,h=st.clientHeight,k=Math.min(w/1280,h/720);
+  b.style.transform=`translate(${(w-1280*k)/2}px,${(h-720*k)/2}px) scale(${k})`;})}
+window.addEventListener("resize",()=>{if(isSizzle()||isTV())fitSz()});
+function szTvView(){return `<div class="sztv">${szBoard()}</div><div class="tvexit">${canControl()?`<button data-act="szPage">Scorer</button>`:""}<button data-act="fs">⛶ Full screen</button><button data-act="exitTv">✕ Exit</button></div>`}
+function szCard(){const z=szState();
+  return `<div class="banner info"><span><b>Sausage Sizzle Showdown</b> · ${esc(szTeam("h"))} ${z.sc.h} – ${z.sc.a} ${esc(szTeam("a"))} · ${z.win?`${esc(szTeam(z.win))} win!`:`${esc(szTeam(z.srv))} serving`}</span></div>`}
+function szPage(){
+  const z=szState(), ctl=canControl(), fresh=!(z.hist||[]).length&&!z.sc.h&&!z.sc.a;
+  const status=z.win?`<b>${esc(szTeam(z.win))}</b> win the Showdown ${z.sc[z.win]}–${z.sc[szOth(z.win)]}`
+    :`Serving: <b>${esc(szTeam(z.srv))}</b>, server ${z.n} · Call: <b>${szCall(z)}</b>`;
+  return `<main class="szp"><div class="wrap szwrap">
+    <div class="szrow sztop"><button class="btn ghost" data-act="exitSz">← Draw</button>
+      ${ctl?(z.tv?`<button class="btn" data-act="szTvOff">Stop showing on TV</button>`:`<button class="btn primary" data-act="szTvOn">Show on TV</button>`):""}</div>
+    <div class="szstage">${szBoard()}</div>
+    ${ctl?`<div class="szstat" aria-live="polite">${status}</div>
+      <div class="szrally">
+        <button class="btn szh" data-act="szR" data-t="h"${z.win?" disabled":""} aria-label="${esc(szTeam("h"))} won the rally"><span class="szplus">+1</span><small>${esc(szTeam("h"))}</small></button>
+        <button class="btn sza" data-act="szR" data-t="a"${z.win?" disabled":""} aria-label="${esc(szTeam("a"))} won the rally"><span class="szplus">+1</span><small>${esc(szTeam("a"))}</small></button>
+      </div>
+      <div class="szrow">
+        <button class="btn" data-act="szUndo"${(z.hist||[]).length?"":" disabled"}>↶ Undo</button>
+        <button class="btn" data-act="szNew">New game</button>
+        ${fresh?`<span class="sub">First serve:</span><button class="btn${z.srv==="h"?" primary":""}" data-act="szFirst" data-t="h">${esc(szTeam("h"))}</button><button class="btn${z.srv==="a"?" primary":""}" data-act="szFirst" data-t="a">${esc(szTeam("a"))}</button>`:""}
+      </div>`:`<p class="sub">Only committee members can score the Showdown.</p>`}
   </div></main>`;
 }
 
@@ -1488,6 +1599,8 @@ function render(){
       ${missing?(canEdit?`<p class="sub">The database is ready but has no event yet. Create it with the example teams, then enter the real names on the Teams tab.</p><button class="btn primary" data-act="createEvent">Create the event</button>`:(readOnlyReason?`<p class="banner warn" style="margin:8px 0 0">${esc(readOnlyReason)}</p>`:`<p class="sub">Committee members: log in below to set it up.</p>`)):""}
     </div></div>${missing?loginBox():""}</main>${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;return}
   if(scorerDiv()){app.innerHTML=scorerView(scorerDiv())+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
+  if(isSizzle()){app.innerHTML=szPage()+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");fitSz();return}
+  if(isTV()&&!comingSoon()&&S.sizzle?.tv){app.innerHTML=szTvView();fitSz();return}
   if(isTV()&&!comingSoon()){app.innerHTML=tvView();fitTV();return}
   if(isTimer()){app.innerHTML=timerPage()+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
   const st=stats();
@@ -1495,6 +1608,7 @@ function render(){
   let banners="";
   if(!S.demo&&S.scoresUndo&&editing()&&Date.now()-S.scoresUndo.at<10*60000) banners+=undoBox();
   if(S.demo) banners+=`<div class="banner warn"><span>Example names and Round 1 example scores are loaded so you can see how it works.</span>${editing()?`<button class="btn" data-act="clearDemo">Clear example scores</button>`:""}</div>`;
+  if(S.sizzle?.tv&&!comingSoon()) banners+=szCard();
   if(canEdit||testMode) banners+=committeeBar();
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
   if(comingSoon()) banners=banners.split('<div class="banner').filter(b=>/testOn|testOff|toggleCommittee/.test(b)).map(b=>'<div class="banner'+b).join("");
@@ -1546,7 +1660,7 @@ async function save(extra=[]){
     const v=getPath(S,p); args.push(new FieldPath(...p), v===undefined?deleteField():clone(v));}
   if(!args.length)return;
   const b=$("#saveBtn"); if(b){b.disabled=true;b.textContent="Saving…"}
-  try{ await updateDoc(evRef,...args); dirty.clear(); toast("Saved. Every screen, including the TV, is updated."); }
+  try{ await updateDoc(evRef,...args); dirty.clear(); if(!isSizzle()) toast("Saved. Every screen, including the TV, is updated."); }
   catch(e){
     if(b){b.disabled=false;b.textContent="Save and update all screens"}
     toast(e&&e.code==="permission-denied"?"Your login isn't on the committee list, so changes can't be saved.":"Couldn't save. Check the internet connection and try again.");
@@ -1624,6 +1738,16 @@ document.addEventListener("click",e=>{
     t.dataset.armed="1";t.textContent=t.dataset.confirm||"Tap again";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="tUndo"){timerUndo();return}
   if(a==="timerPage"){location.hash="timer";window.scrollTo(0,0);return}
+  if(a==="szPage"){location.hash="sizzle";window.scrollTo(0,0);return}
+  if(a==="exitSz"){history.replaceState(null,"",location.pathname+location.search);tab="draw";onHash();return}
+  if(a==="szR"){szRally(t.dataset.t);return}
+  if(a==="szUndo"){szUndo();return}
+  if(a==="szFirst"){szFirst(t.dataset.t);return}
+  if(a==="szTvOn"){szShow(true);return}
+  if(a==="szTvOff"){szShow(false);return}
+  if(a==="szNew"){const z=szState();
+    if(z.win||(!z.sc.h&&!z.sc.a)||t.dataset.armed){szNew();return}
+    t.dataset.armed="1";t.textContent="Tap again to reset the score";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="exitTimer"){history.replaceState(null,"",location.pathname+location.search);tab="draw";onHash();return}
   if(a==="tRestart"){
     if(t.dataset.armed){timerRestartGame();return}
@@ -1671,7 +1795,7 @@ document.addEventListener("change",e=>{
 let wake=null;
 async function onHash(){
   render();
-  if(isTV()||scorerDiv()||isTimer()){try{wake=await navigator.wakeLock?.request("screen")}catch(e){}}
+  if(isTV()||scorerDiv()||isTimer()||isSizzle()){try{wake=await navigator.wakeLock?.request("screen")}catch(e){}}
   else {try{await wake?.release()}catch(e){} wake=null}
 }
 window.addEventListener("hashchange",onHash);
