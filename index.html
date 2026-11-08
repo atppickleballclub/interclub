@@ -736,7 +736,7 @@ function drawTab(){
     const end=st[r-1]+roundLen()*60000;
     html+=`<section class="round" id="round-${r}">
       <div class="roundhead"><h2>Round ${r}</h2>${pill}
-      ${editing()?`<span class="startgrp" style="margin-left:auto"><span class="sub">Start now:</span>${[1,2,3].map(g=>`<button class="btn" data-start="${r}" data-g="${g}" aria-label="Start round ${r} game ${g} now">Game ${g}</button>`).join("")}</span>`:""}</div>
+      ${editing()?`<span class="startgrp" style="margin-left:auto"><span class="sub">Go to:</span>${[1,2,3].map(g=>`<button class="btn" data-start="${r}" data-g="${g}" aria-label="Go to round ${r} game ${g}">Game ${g}</button>`).join("")}</span>`:""}</div>
       ${divs.map(d=>`<div class="divlabel">${esc(dv(d))}</div>
         <div class="matches">${ms.filter(m=>m.r===r&&m.div.id===d.id).sort((a,b)=>a.court-b.court).map(m=>matchCard(m,p)).join("")}</div>`).join("")}
     </section>`;
@@ -1717,8 +1717,8 @@ document.addEventListener("click",e=>{
   if(t.dataset.tab){tab=t.dataset.tab;ss.set("tab",tab);render();window.scrollTo(0,0);return}
   if(t.dataset.div){divFilter=t.dataset.div;ls.set("divFilter",divFilter);render();return}
   if(t.dataset.start){const r=+t.dataset.start, g=+(t.dataset.g||1);
-    if(t.dataset.armed){clkSet({r,g,st:"run",t0:Date.now()});return}
-    t.dataset.armed="1";t.textContent=`Tap again: round ${r} game ${g}`;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
+    if(t.dataset.armed||!inPlay(phase())){clkSet({r,g,st:"set"});toast(`Round ${r}, game ${g} is ready. Tap Start on the timer to begin.`);return}
+    t.dataset.armed="1";t.textContent=`Tap again: go to round ${r} game ${g}`;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   const a=t.dataset.act;
   if(a==="tv"){location.hash="tv";return}
   if(a==="dbStart"){
