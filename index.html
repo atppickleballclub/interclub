@@ -992,7 +992,7 @@ function setupTab(){
       <button class="btn" data-act="pdf" data-kind="courts">Court sheets (1 page per court)</button>
       <button class="btn" data-act="pdf" data-kind="results">Final results</button>
     </div></section>
-  <section class="card"><h3>Scores</h3><p class="sub">${Object.keys(S.scores).length} game scores recorded.</p>
+  <section class="card"><h3>Scores</h3><p class="sub">${Object.keys(S.scores).length} game scores recorded. Clearing also resets the Sausage Sizzle Showdown.</p>
     <div class="actions"><button class="btn danger" data-act="clearScores">Clear all scores</button><span class="muted" id="clearConfirm"></span></div>
     ${undoBox()}</section>`;
 }
@@ -1006,17 +1006,19 @@ function scoresOk(){
 }
 /* ----- clear scores, with one level of undo (kept in the saved data so any screen can undo) ----- */
 function clearAllScores(){
-  const n=Object.keys(S.scores||{}).length;
-  if(n) S.scoresUndo={scores:JSON.parse(JSON.stringify(S.scores)),demo:!!S.demo,dbIdx:JSON.parse(JSON.stringify(S.dbIdx||{})),at:Date.now(),n};
+  const n=Object.keys(S.scores||{}).length, sz=S.sizzle?JSON.parse(JSON.stringify(S.sizzle)):null;
+  if(n||sz) S.scoresUndo={scores:JSON.parse(JSON.stringify(S.scores)),demo:!!S.demo,dbIdx:JSON.parse(JSON.stringify(S.dbIdx||{})),sizzle:sz,at:Date.now(),n};
+  delete S.sizzle;   // the Showdown starts again at 0-0-2, off the TV
   S.scores={};S.demo=false;S.dbIdx={};save([...CTRL,["scores"],["demo"],["scoresUndo"]]);
 }
 function undoClear(){
   const u=S.scoresUndo; if(!u)return;
+  if(u.sizzle) S.sizzle=u.sizzle;
   S.scores=u.scores;S.demo=u.demo;S.dbIdx=u.dbIdx;delete S.scoresUndo;save([...CTRL,["scores"],["demo"],["scoresUndo"]]);
 }
 function undoBox(){
-  const u=S.scoresUndo; if(!u) return "";
-  return `<div class="banner warn" style="margin:12px 0 0"><span>${u.n} score${u.n===1?"":"s"} cleared at ${fmtT(u.at)}.</span><button class="btn" data-act="undoClear">↶ Undo clear</button></div>`;
+  const u=S.scoresUndo; if(!u||Date.now()-u.at>10*60000) return "";   // undo is offered for 10 minutes
+  return `<div class="banner warn" style="margin:12px 0 0"><span>Scores cleared at ${fmtT(u.at)}.</span><button class="btn" data-act="undoClear">↶ Undo clear</button></div>`;
 }
 
 /* ----- timer text ----- */
@@ -1614,7 +1616,6 @@ function render(){
   const st=stats();
   if(tab==="setup"&&!editing()) tab="draw";
   let banners="";
-  if(!S.demo&&S.scoresUndo&&editing()&&Date.now()-S.scoresUndo.at<10*60000) banners+=undoBox();
   if(S.demo) banners+=`<div class="banner warn"><span>Example names and Round 1 example scores are loaded so you can see how it works.</span>${editing()?`<button class="btn" data-act="clearDemo">Clear example scores</button>`:""}</div>`;
   if(S.sizzle?.tv&&!comingSoon()) banners+=szCard();
   if(canEdit||testMode) banners+=committeeBar();
