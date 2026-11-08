@@ -401,6 +401,7 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .szrally .sza{background:#2A7F27} .szrally .sza:hover{filter:brightness(1.08)}
 .szrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .startgrp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.startgrp .btn{padding:6px 12px}
+.pteam{display:block;font-size:12px;color:var(--muted);margin:2px 0 0 14px;font-weight:400}
 
 /* committee login */
 .loginbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;padding-top:24px;border-top:1px solid var(--line)}
@@ -714,7 +715,7 @@ function dbCard(d,p){
   const courtSel=editing()?`<select id="c-${k}" data-court="${k}" aria-label="Court">${Array.from({length:Math.max(12,ct)},(_,i)=>`<option value="${i+1}"${i+1==ct?" selected":""}>Ct ${i+1}</option>`).join("")}</select>`:`Ct ${ct}`;
   const list=side=>`<ol>${dbOrder(d,side).map(([tk,i])=>`<li>${pnp(tk,i)}</li>`).join("")}</ol>`;
   return `<article class="match${live?" isLive":""}">
-    <div class="mhead"><span class="court">${courtSel}</span><div class="teams">${esc(d.name)} · ${esc(d.dupr)}</div></div>
+    <div class="mhead"><span class="court">${courtSel}</span><div class="teams">${esc(dv(d))}</div></div>
     <div class="game"><div class="t"><b>Game</b>To 25</div><div class="pair home"><span class="pn">${esc(S.clubs.h.short)}</span></div>${(()=>{const i=dbInfo(d);return `<div class="score num"><span class="${i.h>=i.a?"w":"l"}">${i.h}</span><span class="muted">–</span><span class="${i.a>=i.h?"w":"l"}">${i.a}</span></div>`})()}<div class="pair away"><span class="pn">${esc(S.clubs.a.short)}</span></div></div>
     ${editing()?`<div class="dbopen"><button class="btn primary" data-act="openScore" data-d="${d.id}">Open live scorer for Court ${ct}</button><span class="muted">Hand this to the scorer at the court</span></div>`:""}
     <div class="dbrot"><div><div class="eyebrow atp">${esc(S.clubs.h.short)} rotation</div>${list("h")}</div><div><div class="eyebrow dural">${esc(S.clubs.a.short)} rotation</div>${list("a")}</div></div>
@@ -727,7 +728,7 @@ function drawTab(){
   const divs=S.divisions.filter(d=>divFilter==="all"||divFilter===d.id);
   let html=(editing()?timerControls():timerView())+programHTML()+`<div class="chips" role="group" aria-label="Division">
     <button class="chip" data-div="all" aria-pressed="${divFilter==="all"}">Both divisions</button>
-    ${S.divisions.map(d=>`<button class="chip" data-div="${d.id}" aria-pressed="${divFilter===d.id}">${esc(d.name)} · ${esc(d.dupr)}</button>`).join("")}
+    ${S.divisions.map(d=>`<button class="chip" data-div="${d.id}" aria-pressed="${divFilter===d.id}">${esc(dv(d))}</button>`).join("")}
   </div>`;
   for(let r=1;r<=ROUNDS;r++){
     const status=roundStatus(r);
@@ -736,7 +737,7 @@ function drawTab(){
     html+=`<section class="round" id="round-${r}">
       <div class="roundhead"><h2>Round ${r}</h2>${pill}
       ${editing()?`<span class="startgrp" style="margin-left:auto"><span class="sub">Start now:</span>${[1,2,3].map(g=>`<button class="btn" data-start="${r}" data-g="${g}" aria-label="Start round ${r} game ${g} now">Game ${g}</button>`).join("")}</span>`:""}</div>
-      ${divs.map(d=>`<div class="divlabel">${esc(d.name)} · ${esc(d.dupr)}</div>
+      ${divs.map(d=>`<div class="divlabel">${esc(dv(d))}</div>
         <div class="matches">${ms.filter(m=>m.r===r&&m.div.id===d.id).sort((a,b)=>a.court-b.court).map(m=>matchCard(m,p)).join("")}</div>`).join("")}
     </section>`;
   }
@@ -760,23 +761,23 @@ function teamTable(st,d,compact){
 function standingsTab(){
   const st=stats(), c=S.clubs;
   const ct=(s,cls)=>`<div class="clubtot ${s}"><div class="top-row"><span class="logo ${s}" role="img" aria-label="${esc(c[s].name)} logo"></span><div class="eyebrow">${esc(c[s].name)}</div></div><div class="big num ${cls}">${st.club[s].w}</div>
-    <div class="muted num">Games won · ${S.divisions.map(d=>`${esc(d.name)}: ${st.club[s].byDiv[d.id]}`).join(" · ")}</div>
+    <div class="muted num">Games won · ${S.divisions.map(d=>`${esc(dv(d))}: ${st.club[s].byDiv[d.id]}`).join(" · ")}</div>
     <div class="muted num">Points ${st.club[s].pf}</div></div>`;
   const dbRes=`<section class="card"><h3>Dreambreaker</h3><p class="sub">One game per division, first to 25. Shown separately from the games-won totals.</p><div class="tbl"><table><tbody>${S.divisions.map(d=>{const i=dbInfo(d), started=i.h+i.a>0;
-    return `<tr><td>${esc(d.name)} <span class="muted">${esc(d.dupr)}</span></td><td>${started?`<b class="atp">${i.h}</b> – <b class="dural">${i.a}</b>`:`<span class="muted">–</span>`}</td><td>${i.over?(i.winner==="h"?`<b class="atp">${esc(c.h.short)} win</b>`:`<b class="dural">${esc(c.a.short)} win</b>`):started?"In play":"Not played yet"}</td></tr>`}).join("")}</tbody></table></div></section>`;
+    return `<tr><td>${esc(dv(d))}</td><td>${started?`<b class="atp">${i.h}</b> – <b class="dural">${i.a}</b>`:`<span class="muted">–</span>`}</td><td>${i.over?(i.winner==="h"?`<b class="atp">${esc(c.h.short)} win</b>`:`<b class="dural">${esc(c.a.short)} win</b>`):started?"In play":"Not played yet"}</td></tr>`}).join("")}</tbody></table></div></section>`;
   return `<div class="actions"><button class="btn primary" data-act="pdf" data-kind="results">⬇ Download final results (PDF)</button><span class="muted" style="font-size:13px">Club totals, dreambreakers, team and player tables, and every score</span></div>
   <section class="clubs">${ct("h","atp")}${ct("a","dural")}</section>${dbRes}
-  <section class="grid2">${S.divisions.map(d=>`<div class="card"><h3>${esc(d.name)}</h3><p class="sub">${esc(d.dupr)} · ranked by games won, then points difference</p>${teamTable(st,d,false)}</div>`).join("")}</section>
+  <section class="grid2">${S.divisions.map(d=>`<div class="card"><h3>${esc(dv(d))}</h3>${teamTable(st,d,false)}</div>`).join("")}</section>
   <section class="grid2">${S.divisions.map(d=>{
     const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
-    return `<div class="card"><h3>${esc(d.name)} players</h3><div class="tbl"><table><thead><tr><th>Player</th><th style="text-align:left">Team</th><th>W</th><th>L</th><th>+/–</th></tr></thead><tbody>
-    ${rows.map(p=>`<tr><td><span class="dot" style="background:var(--${sideOf(p.tk)==="h"?"atp":"dural"})"></span>${pn(p.tk,p.i)}</td><td style="text-align:left" class="muted">${esc(S.teams[p.tk].name)}</td><td>${p.w}</td><td>${p.l}</td><td>${sgn(p.pf-p.pa)}</td></tr>`).join("")}
+    return `<div class="card"><h3>${esc(dv(d))} · players</h3><div class="tbl"><table><thead><tr><th>Player</th><th>W</th><th>L</th><th>PF</th><th>PA</th><th>+/–</th></tr></thead><tbody>
+    ${rows.map(p=>`<tr><td><span class="dot" style="background:var(--${sideOf(p.tk)==="h"?"atp":"dural"})"></span>${pn(p.tk,p.i)}<span class="pteam">${esc(S.teams[p.tk].name)}</span></td><td>${p.w}</td><td>${p.l}</td><td>${p.pf}</td><td>${p.pa}</td><td>${sgn(p.pf-p.pa)}</td></tr>`).join("")}
     </tbody></table></div></div>`}).join("")}</section>`;
 }
 
 /* ----- teams ----- */
 function teamsTab(){
-  return (editing()?csvCard():"")+S.divisions.map(d=>`<section class="card"><h3>${esc(d.name)}</h3><p class="sub">${esc(d.dupr)} · players numbered 1–3 set the pairs: 1 &amp; 2, then 1 &amp; 3, then 2 &amp; 3 · <span class="cap" style="margin:0">C</span> marks the team captain</p>
+  return (editing()?csvCard():"")+S.divisions.map(d=>`<section class="card"><h3>${esc(dv(d))}</h3><p class="sub">Players numbered 1–3 set the pairs: 1 &amp; 2, then 1 &amp; 3, then 2 &amp; 3 · <span class="cap" style="margin:0">C</span> marks the team captain</p>
     <div class="teamgrid">${["h","a"].flatMap(s=>[1,2,3].map(n=>{const k=`${d.id}-${s}${n}`,t=S.teams[k];
       if(editing()) return `<div class="team ${s}"><label class="field">Team name<input id="tn-${k}" data-team="${k}" value="${esc(t.name)}"></label>
         ${t.players.map((p,i)=>`<label class="field">Player ${i+1}${i===0?" · Captain":""}<input id="tp-${k}-${i}" data-team="${k}" data-p="${i}" value="${esc(p)}"></label>`).join("")}</div>`;
@@ -1169,6 +1170,7 @@ const SZ_COURT=`<svg aria-hidden="true" class="szabs szcourt" style="left:0;top:
     <ellipse cx="840" cy="668" rx="400" ry="26" fill="#000000" opacity="0.32"/>
     <ellipse cx="190" cy="664" rx="130" ry="16" fill="#000000" opacity="0.32"/>
   </svg>`;
+const dv=d=>d.dupr||d.name;   // divisions are named by their DUPR band
 const isSizzle=()=>location.hash==="#sizzle";
 const szOth=t=>t==="h"?"a":"h";
 const szBlank=(first,tv)=>({sc:{h:0,a:0},srv:first,n:2,first,win:null,tv:!!tv,hist:[]});
@@ -1302,7 +1304,7 @@ function tvView(){
         <div class="tvphase ${cls}"><div class="what">${esc(sub)}</div><div class="clock">${cd?`<small>${esc(lbl)}</small><div class="cd" id="tvcd">${cd}</div>`:`<div class="msg">${esc(lbl)}</div>`}</div></div>
         <div class="tvcourts${isDB?" db":""}">${courts}</div>
       </div>
-      ${isDB?"":`<div class="tvside">${S.divisions.map(d=>`<div class="tvtbl"><h4>${esc(d.name)}<small>${esc(d.dupr)}</small></h4>${teamTable(st,d,true)}</div>`).join("")}</div>`}
+      ${isDB?"":`<div class="tvside">${S.divisions.map(d=>`<div class="tvtbl"><h4>${esc(dv(d))}</h4>${teamTable(st,d,true)}</div>`).join("")}</div>`}
     </div>
     <div class="tvexit">${canControl()?(S.pausedAt!=null?`<button data-act="tResume">▶ Resume</button>`:`<button data-act="tPause">❚❚ Pause</button>`)+`<button data-act="timerPage">⏱ Timer</button>`:""}<button data-act="fs">Full screen</button><button data-act="exitTv">Exit TV</button></div>
   </div>`;
@@ -1493,19 +1495,19 @@ function pdfResults(doc){
     doc.setFont("helvetica","bold");doc.setFontSize(9);clubText(doc,sd,c[sd].name.toUpperCase(),x,y+6);
     doc.setFontSize(30);clubText(doc,sd,String(t.w),x,y+19);
     doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);
-    doc.text(TX(`Games won  -  ${S.divisions.map(d=>`${d.name}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
+    doc.text(TX(`Games won  -  ${S.divisions.map(d=>`${dv(d)}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
     doc.text(TX(`Points ${t.pf}`),x+20,y+19);doc.setTextColor(...C_INK);
   });
   y+=27;
   // dreambreakers
   doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text("Dreambreakers",10,y);y+=2;
   y=pdfTable(doc,y,[{h:"Division",x:12,w:60},{h:c.h.short,x:110,w:15,align:"center"},{h:c.a.short,x:130,w:15,align:"center"},{h:"Result",x:150,w:48,align:"right"}],
-    S.divisions.map(d=>{const i=dbInfo(d),played=i.h+i.a>0;return [`${d.name}  ${d.dupr}`,{t:played?i.h:"-",b:1,side:"h"},{t:played?i.a:"-",b:1,side:"a"},
+    S.divisions.map(d=>{const i=dbInfo(d),played=i.h+i.a>0;return [dv(d),{t:played?i.h:"-",b:1,side:"h"},{t:played?i.a:"-",b:1,side:"a"},
       i.over?{t:`${c[i.winner].short} win`,b:1,side:i.winner}:{t:played?"Not finished":"Not played",muted:1}]}));
   y+=6;
   // team standings
   S.divisions.forEach(d=>{
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${d.name} teams`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(d.dupr),48,y);doc.setTextColor(...C_INK);y+=2;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${dv(d)} teams`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);y+=2;
     const rows=rank(Object.values(st.team).filter(t=>t.k.startsWith(d.id+"-")));
     y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Team",x:20,w:60},{h:"Ties W-L",x:84,w:18,align:"center"},{h:"W",x:106,w:12,align:"right"},{h:"L",x:126,w:12,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:184,w:14,align:"right"}],
       rows.map((t,i)=>[i+1,{t:S.teams[t.k].name,b:1,side:sideOf(t.k)},`${t.tw}-${t.tl}`,t.w,t.l,t.pf,t.pa,{t:sgn(t.pf-t.pa),b:1}]));
@@ -1516,10 +1518,10 @@ function pdfResults(doc){
   doc.addPage(); pdfHead(doc,"Final results - players","Every player played 6 games");
   y=27;
   S.divisions.forEach(d=>{
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${d.name} players`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text(TX(d.dupr),50,y);doc.setTextColor(...C_INK);y+=2;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${dv(d)} players`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);y+=2;
     const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
-    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Player",x:20,w:62},{h:"Team",x:86,w:40},{h:"W",x:140,w:10,align:"right"},{h:"L",x:158,w:10,align:"right"},{h:"+/-",x:180,w:18,align:"right"}],
-      rows.map((p,i)=>[i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.l,{t:sgn(p.pf-p.pa),b:1}]),{rh:5.9});
+    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Player",x:20,w:56},{h:"Team",x:80,w:38},{h:"W",x:122,w:10,align:"right"},{h:"L",x:136,w:10,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:182,w:16,align:"right"}],
+      rows.map((p,i)=>[i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.l,p.pf,p.pa,{t:sgn(p.pf-p.pa),b:1}]),{rh:5.9});
     y+=7;
   });
   pdfFoot(doc);
