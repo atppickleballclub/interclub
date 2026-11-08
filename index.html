@@ -708,7 +708,7 @@ function programHTML(planned){
   const st=roundStarts(), dbs=dbStart(); S.roundStart=keep;
   const items=[[fmtT(timeOn(E().arrive)),"Arrival & warm-up"],[fmtT(timeOn(E().briefing)),"Briefing & welcome"],
     ...st.map((t,i)=>[fmtT(t),`Round ${i+1}`]),[fmtT(dbs),"Dreambreakers"],["After","BBQ lunch"]];
-  return `<div class="program" aria-label="Today's timetable"><span class="ptitle">Today</span>${items.map(([t,l])=>`<span><b class="num">${esc(t)}</b>${esc(l)}</span>`).join("")}</div>`;
+  return `<div class="program" aria-label="Today's timetable">${items.map(([t,l])=>`<span><b class="num">${esc(t)}</b>${esc(l)}</span>`).join("")}</div>`;
 }
 function dbCard(d,p){
   const k=`db-${d.id}`, ct=S.courts[k], live=p.kind==="db";
@@ -992,7 +992,7 @@ function setupTab(){
       <button class="btn" data-act="pdf" data-kind="courts">Court sheets (1 page per court)</button>
       <button class="btn" data-act="pdf" data-kind="results">Final results</button>
     </div></section>
-  <section class="card"><h3>Scores</h3><p class="sub">${Object.keys(S.scores).length} game scores recorded. Clearing also resets the Sausage Sizzle Showdown.</p>
+  <section class="card"><h3>Scores</h3><p class="sub">${Object.keys(S.scores).length} game scores recorded. Clearing also resets the timer and the Sausage Sizzle Showdown.</p>
     <div class="actions"><button class="btn danger" data-act="clearScores">Clear all scores</button><span class="muted" id="clearConfirm"></span></div>
     ${undoBox()}</section>`;
 }
@@ -1008,12 +1008,15 @@ function scoresOk(){
 function clearAllScores(){
   const n=Object.keys(S.scores||{}).length, sz=S.sizzle?JSON.parse(JSON.stringify(S.sizzle)):null;
   if(n||sz) S.scoresUndo={scores:JSON.parse(JSON.stringify(S.scores)),demo:!!S.demo,dbIdx:JSON.parse(JSON.stringify(S.dbIdx||{})),sizzle:sz,at:Date.now(),n};
+  if(S.clk) S.scoresUndo={...(S.scoresUndo||{scores:{},demo:!!S.demo,dbIdx:{},at:Date.now(),n:0}),clk:S.clk,clkPrev:S.clkPrev??null,rs:S.roundStart||{}};
   delete S.sizzle;   // the Showdown starts again at 0-0-2, off the TV
+  delete S.clk; delete S.clkPrev; delete S.pausedAt; S.roundStart={};   // and the timer goes back to before round 1
   S.scores={};S.demo=false;S.dbIdx={};save([...CTRL,["scores"],["demo"],["scoresUndo"]]);
 }
 function undoClear(){
   const u=S.scoresUndo; if(!u)return;
   if(u.sizzle) S.sizzle=u.sizzle;
+  if(u.clk){S.clk=u.clk; if(u.clkPrev) S.clkPrev=u.clkPrev; S.roundStart=u.rs||{};}
   S.scores=u.scores;S.demo=u.demo;S.dbIdx=u.dbIdx;delete S.scoresUndo;save([...CTRL,["scores"],["demo"],["scoresUndo"]]);
 }
 function undoBox(){
@@ -1025,8 +1028,9 @@ function undoBox(){
 function phaseInfo(st){
   const p=phase(), c=S.clubs, now=nowT();
   let lbl="",sub="",cd="",cls=p.kind;
-  if(p.kind==="pre"){const br=timeOn(E().briefing);
-    if(now<br){sub=`Warm-up · briefing & welcome at ${fmtT(br)}`;lbl=`Round 1 starts ${fmtT(p.until)}`}
+  if(p.kind==="pre"){const br=timeOn(E().briefing), day=new Date(p.until);
+    if(new Date(now).toDateString()!==day.toDateString()&&now<p.until){sub="Interclub Challenge";lbl=`Round 1 starts ${day.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})}, ${fmtT(p.until)}`}
+    else if(now<br){sub=`Warm-up · briefing & welcome at ${fmtT(br)}`;lbl=`Round 1 starts ${fmtT(p.until)}`}
     else if(now<p.until){sub="Briefing & welcome";lbl=`Round 1 starts ${fmtT(p.until)}`}
     else {sub="Briefing & welcome";lbl="Round 1 starting soon"}
     cd=""}
