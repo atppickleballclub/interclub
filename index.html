@@ -607,6 +607,7 @@ const sgn=n=>n>0?`+${n}`:`${n}`;
 /* ----- UI state ----- */
 let tab=ss.get("tab")||"draw";
 let divFilter=ls.get("divFilter")||"all";
+let roundFilter=ls.get("roundFilter")||"all";
 let canEdit=false, committee=ls.get("committee")!=="off", readOnlyReason="", userEmail=null, showLogin=false, loginMsg="", loginEmail="";
 let dirty=new Map();  // unsaved edits: id -> field path in the event document
 let toastMsg=ss.get("flash")||""; ss.del("flash");
@@ -729,8 +730,11 @@ function drawTab(){
   let html=(editing()?timerControls():timerView())+programHTML()+`<div class="chips" role="group" aria-label="Division">
     <button class="chip" data-div="all" aria-pressed="${divFilter==="all"}">Both divisions</button>
     ${S.divisions.map(d=>`<button class="chip" data-div="${d.id}" aria-pressed="${divFilter===d.id}">${esc(dv(d))}</button>`).join("")}
+  </div><div class="chips" role="group" aria-label="Round">
+    ${[["all","All rounds"],...Array.from({length:ROUNDS},(_,i)=>[String(i+1),`Round ${i+1}`]),["db","Dreambreakers"]].map(([k,l])=>`<button class="chip" data-round="${k}" aria-pressed="${roundFilter===k}">${l}</button>`).join("")}
   </div>`;
   for(let r=1;r<=ROUNDS;r++){
+    if(roundFilter!=="all"&&roundFilter!==String(r)) continue;
     const status=roundStatus(r);
     const pill=status==="live"?`<span class="pill live">On court now</span>`:status==="done"?`<span class="pill done">Finished</span>`:status==="next"?`<span class="pill next">Up next</span>`:"";
     const end=st[r-1]+roundLen()*60000;
@@ -743,7 +747,7 @@ function drawTab(){
   }
   const dstat=p.kind==="db"?"live":p.kind==="done"?"done":p.round===DB?"next":"later";
   const dpill=dstat==="live"?`<span class="pill live">On court now</span>`:dstat==="done"?`<span class="pill done">Finished</span>`:dstat==="next"?`<span class="pill next">Up next</span>`:"";
-  html+=`<section class="round" id="dreambreaker">
+  if(roundFilter==="all"||roundFilter==="db") html+=`<section class="round" id="dreambreaker">
     <div class="roundhead"><h2>Dreambreakers</h2>${dpill}${editing()&&dstat!=="live"&&dstat!=="done"?`<button class="btn primary" data-act="dbStart" style="margin-left:auto">▶ Start dreambreakers now</button>`:""}</div>
     <p class="sub dbrules">One game per division: all 9 players from each club. Rally scoring, first to 25 wins. Players rotate in order every 5 points scored until a team reaches 21. Players 1 and 2 on each list start.</p>
     <div class="matches">${divs.map(d=>dbCard(d,p)).join("")}</div>
@@ -1718,9 +1722,10 @@ document.addEventListener("submit",async e=>{
 /* ----- events ----- */
 document.addEventListener("click",e=>{
   const pt=e.target.closest("[data-pt]"); if(pt){dbPress(pt.dataset.pt,pt.dataset.side,+pt.dataset.v);return}
-  const t=e.target.closest("[data-tab],[data-div],[data-act],[data-start]"); if(!t) return;
+  const t=e.target.closest("[data-tab],[data-div],[data-round],[data-act],[data-start]"); if(!t) return;
   if(t.dataset.tab){tab=t.dataset.tab;ss.set("tab",tab);render();window.scrollTo(0,0);return}
   if(t.dataset.div){divFilter=t.dataset.div;ls.set("divFilter",divFilter);render();return}
+  if(t.dataset.round){roundFilter=t.dataset.round;ls.set("roundFilter",roundFilter);render();return}
   if(t.dataset.start){const r=+t.dataset.start, g=+(t.dataset.g||1);
     if(t.dataset.armed||!inPlay(phase())){clkSet({r,g,st:"set"});toast(`Round ${r}, game ${g} is ready. Tap Start on the timer to begin.`);return}
     t.dataset.armed="1";t.textContent=`Tap again: go to round ${r} game ${g}`;setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
