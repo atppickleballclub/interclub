@@ -403,6 +403,55 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .startgrp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.startgrp .btn{padding:6px 12px}
 .pteam{display:block;font-size:12px;color:var(--muted);margin:2px 0 0 14px;font-weight:400}
 
+/* ----- player briefing ----- */
+.brief{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto}
+.bjump{display:flex;gap:6px;flex-wrap:wrap}
+.bwelcome p{margin:0 0 10px;line-height:1.55}.bwelcome p:last-child{margin:0}
+.btime{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.btime li{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.btime li:last-child{border-bottom:0}
+.btime b{font-family:var(--display);font-size:19px;color:var(--lime);text-align:right;white-space:nowrap}
+.brief ul{margin:6px 0 0;padding-left:18px;line-height:1.55}.brief li{margin:3px 0}
+.bgames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+.bgames div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.bgames b{display:block;font-family:var(--display);font-size:18px;text-transform:uppercase}.bgames span{color:var(--muted);font-size:13px}
+.bdivs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.bdivs span{background:var(--sunk);border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-weight:600;font-size:14px}
+.bmap{display:block;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-top:10px}.bmap img{display:block;width:100%;height:auto}
+.bsample{position:relative;overflow:hidden;background:#f4f6f2;color:#14181f;border-radius:8px;padding:12px 14px;margin-top:12px}
+.bsample .bs-bar{display:flex;justify-content:space-between;gap:8px;background:#dee2e8;margin:-12px -14px 8px;padding:8px 14px;font-size:14px}
+.bsample .bs-bar span{color:#4a5160;font-weight:600}
+.bsample .bs-teams{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:800;font-size:16px;margin:2px 0 8px}
+.bsample .bs-teams .vs{font-size:12px;color:#4a5160;font-weight:600}
+.bsample table{width:100%;border-collapse:collapse;font-size:13px}
+.bsample th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#4a5160;background:#eceff4;padding:4px}
+.bsample th,.bsample td{padding:6px 4px;text-align:center;border-bottom:1px solid #c9ced8;color:#14181f;background:none}
+.bsample th{color:#4a5160;background:#eceff4}
+.bsample b{color:#14181f}
+.bsample th:first-child,.bsample td:first-child{text-align:left}
+.bsample .nm{text-align:left;font-weight:700;line-height:1.25}.bsample .nm.r{text-align:right}
+.bsample td small{display:block;font-size:10px;color:#4a5160;font-weight:600}
+.bsample .sc{display:inline-block;min-width:28px;border:1.5px solid #14181f;border-radius:2px;padding:2px 0;font-family:'Caveat','Comic Sans MS',cursive;font-weight:700;font-size:17px;color:#1f3fa8}
+.bsample tfoot td{font-weight:800;border-bottom:0}
+.bsample .sig{display:flex;justify-content:space-between;gap:16px;margin-top:10px;font-size:11px;color:#4a5160}
+.bsample .sig span{display:block;border-top:1px solid #14181f;padding-top:2px}
+.bsample .sig div{flex:1}.bsample .sig i{display:block;font-family:'Caveat','Comic Sans MS',cursive;font-style:normal;font-size:20px;line-height:1.1;color:#1f3fa8}
+.bstamp{position:absolute;right:12px;bottom:8px;transform:rotate(-8deg);border:3px solid rgba(220,40,40,.55);color:rgba(220,40,40,.65);font-family:var(--display);font-weight:900;font-size:16px;letter-spacing:.12em;text-transform:uppercase;padding:0 8px;pointer-events:none}
+.bsample .tk{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;justify-content:flex-start;color:#14181f}
+.bsample .tk::before{content:"";width:11px;height:11px;border:1.5px solid #14181f;border-radius:2px;flex:none}
+.bsample .tk.on::before{content:"\2713";color:#1f3fa8;font-size:13px;line-height:10px;text-align:center;font-weight:900}
+.bsample .wn{white-space:nowrap}
+.bsample .bs-foot{margin:8px 0 0;padding-right:110px;min-height:26px;font-size:11px;color:#4a5160;text-align:left}
+@media (max-width:420px){.bsample{padding:12px 8px}.bsample .bs-bar{margin:-12px -8px 8px;padding:8px}.bsample table{font-size:11.5px}.bsample .nm{font-size:11px}.bsample .sc{min-width:22px;font-size:15px}}
+.bicons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;margin:8px 0 4px}
+.bicons div{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.bicons p{margin:2px 0 0;line-height:1.45;font-size:15px}
+.bi{flex:none;width:38px;height:38px;border-radius:50%;background:var(--sunk);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1}
+.bdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.bdot.big{width:18px;height:18px;margin:0}
+@media (max-width:560px){.bicons{grid-template-columns:1fr}}
+.brief .card{scroll-margin-top:12px}
+
 /* committee login */
 .loginbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;padding-top:24px;border-top:1px solid var(--line)}
 .loginbar b{color:var(--ink)}
@@ -605,7 +654,10 @@ const sideOf=tk=>tk.split("-")[1][0];
 const sgn=n=>n>0?`+${n}`:`${n}`;
 
 /* ----- UI state ----- */
-let tab=ss.get("tab")||"draw";
+const SHOW_BRIEF=true;   // player briefing tab (claude.ai version only for now)
+// first tab: the briefing until the event day, then the draw
+const onEventDay=()=>{const d=E().date?new Date(E().date+"T00:00"):null;return !d||Date.now()>=d.getTime()};
+let tab=ss.get("tab")||(SHOW_BRIEF&&!onEventDay()?"brief":"draw");
 let divFilter=ls.get("divFilter")||"all";
 let roundFilter=ls.get("roundFilter")||"all";
 let canEdit=false, committee=ls.get("committee")!=="off", readOnlyReason="", userEmail=null, showLogin=false, loginMsg="", loginEmail="";
@@ -649,7 +701,7 @@ function liveBox(){
 }
 function header(st){
   const c=S.clubs, soon=comingSoon();
-  const tabs=[["draw","Draw"],["standings","Standings"],["teams","Teams"]];
+  const tabs=[...(SHOW_BRIEF?[["brief","Briefing"]]:[]),["draw","Draw"],["standings","Standings"],["teams","Teams"]];
   if(editing()) tabs.push(["setup","Committee setup"]);
   return `<header class="top"><div class="wrap">
     <div class="headrow">
@@ -1163,6 +1215,89 @@ function timerPage(){
 }
 
 
+/* ----- player briefing (claude.ai version only for now) ----- */
+const BRIEF_COURTS="brief-courts.png";
+const BRIEF_MAP="brief-map.png";
+function briefTab(){
+  const c=S.clubs, st=roundStarts(), dbs=dbStart(), ms=matches();
+  const crt=d=>{const cs=[...new Set(ms.filter(m=>m.div.id===d.id).map(m=>m.court))].sort((a,b)=>a-b);return cs.length?`Courts ${cs[0]}–${cs[cs.length-1]}`:""};
+  const nGames=ms.length*3, toWin=Math.floor(nGames/2)+1;
+  const perClub=Object.keys(S.teams).filter(k=>/-h\d+$/.test(k)).length;
+  const sched=[[timeOn(E().arrive),"Arrival, check-in & warm-up"],[timeOn(E().briefing),"Player briefing & welcome"],
+    ...st.map((t,i)=>[t,i===0?"Round 1 begins":`Round ${i+1}`]),[dbs,"Dreambreakers"],[null,"BBQ lunch & the Sausage Sizzle Showdown"]];
+  const sec=(id,title,body)=>`<section class="card" id="${id}"><h3>${title}</h3>${body}</section>`;
+  // dot points with a picture beside each one, like the Defend the Kitchen briefing
+  const ic=items=>`<div class="bicons">${items.map(([i,h])=>`<div><span class="bi" aria-hidden="true">${i}</span><p>${h}</p></div>`).join("")}</div>`;
+  const ul=items=>`<ul>${items.map(([i,h])=>`<li>${h}</li>`).join("")}</ul>`;
+  const dot=col=>`<i class="bdot" style="background:${col}"></i>`;
+  const divCol=["#a855f7","#ef4444","#f97316","#22c55e"];
+  const day=new Date(baseTs()).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
+  return `<div class="brief">
+    <nav class="bjump" aria-label="Briefing sections">${[["b-sched","Schedule"],["b-arrive","Getting there"],["b-day","On the day"],["b-format","Format"],["b-courts","Courts"],["b-db","Dreambreakers"],["b-card","Score cards"],["b-results","Results"]].map(([k,l])=>`<button class="chip" data-act="bjump" data-id="${k}">${l}</button>`).join("")}</nav>
+    <section class="card bwelcome"><h3>Welcome</h3>
+      <p>Welcome to the ${esc(E().name)}: <b class="atp">${esc(c.h.name)}</b> v <b class="dural">${esc(c.a.name)}</b>, ${esc(day)} at ${esc(E().venue)}.</p>
+      <p>It's a fun, social day between our two clubs. Play hard and fight for every point, but keep it friendly and cheer each other on.</p></section>
+    ${sec("b-sched","Schedule",`<ol class="btime">${sched.map(([t,l])=>`<li><b class="num">${t?fmtT(t):"After"}</b><span>${esc(l)}</span></li>`).join("")}</ol>`)}
+    ${sec("b-arrive","Getting there &amp; parking",ic([
+      ["🅿️",`The main <b>car park</b> is off The Ponds Boulevard, beside the playground and the Ponds FC building.`],
+      ["🚗",`Street parking on <b>Lilypad Avenue</b>, which runs right beside the courts, and on <b>The Ponds Boulevard</b>.`],
+      ["🚶",`The <b>pickleball courts</b> are a short walk past the oval, along the path at the top of the field.`],
+      ["⏰",`Give yourself time to park and walk over before <b>${fmtT(timeOn(E().arrive))}</b>.`]])+`
+      <a class="bmap" href="https://maps.app.goo.gl/wxTT2ocMQRXgxfeL7" target="_blank" rel="noopener"><img src="${BRIEF_MAP}" alt="Site map of Jonas Bradley Park: the pickleball courts at top left, street parking on Lilypad Avenue and The Ponds Boulevard, the car park at right, and the toilets in the Ponds FC building beside the car park." loading="lazy"></a>
+      <p class="sub" style="margin:6px 0 0">Tap the map for directions.</p>`)}
+    ${sec("b-day","On the day",ic([
+      ["✅",`<b>Check in</b> at the tournament desk beside the courts when you arrive (see the court map).`],
+      ["👕",`<b>Wear your club shirt.</b> It's club against club today.`],
+      ["🪑",`<b>Bring a camping chair</b>, water, a hat and sunscreen.`],
+      ["🚻",`<b>Toilets</b> are in the Ponds FC building beside the car park.`],
+      ["⛑️",`<b>First aid</b> is at the tournament desk.`],
+      ["📱",`<b>This site is live all day.</b> Check the Draw for your court and partners each round.`]]))}
+    ${sec("b-format","Team &amp; match format",`<p class="sub" style="margin:0 0 6px">Each club has ${perClub} teams of three, split across two divisions:</p>
+      <div class="bdivs">${S.divisions.map((d,i)=>`<span>${dot(divCol[i%4])}${esc(dv(d))} · ${crt(d)}</span>`).join("")}</div>
+      ${ul([["🔁",`<b>${ROUNDS} rounds.</b> Each round your team plays a different team from the other club.`],["🏓",`Each round is <b>three doubles games</b> against the same team:`]])}
+      <div class="bgames"><div><b>Game 1</b><span>Players 1 &amp; 2</span></div><div><b>Game 2</b><span>Players 1 &amp; 3</span></div><div><b>Game 3</b><span>Players 2 &amp; 3</span></div></div>
+      ${ul([["🔢",`Player numbers stay the same all day. Player 1 is the captain (C).`],
+        ["⏱️",`Every game is <b>${E().gameMin} minutes</b>, all courts on one clock.`],
+        ["🔔",`<b>Listen for the bell.</b> It starts and ends every game.`],
+        ["⚡",`<b>Level at time?</b> Play one golden point to decide it. There are no draws.`],
+        ["3️⃣",`All three games are played, even if one team wins the first two.`]])}`)}
+    ${sec("b-courts","Courts",`<div class="bmap" style="margin-top:0"><img src="${BRIEF_COURTS}" alt="Court map: courts 1 to 3 (DUPR under 3.0, purple) in one column and courts 4 to 6 (DUPR 3.0 to 3.5, red) beside them, with the tournament desk to the right of the courts." loading="lazy"></div>
+      ${ul([...S.divisions.map((d,i)=>[`<i class="bdot big" style="background:${divCol[i%4]}"></i>`,`<b>${esc(dv(d))}</b> plays on ${crt(d).replace("Courts","courts")}.`]),
+        ["⛑️",`The <b>tournament desk</b> is beside the courts: check-in, score cards and first aid.`],
+        ["📍",`Your court for each round is on the <b>Draw</b> and the TV.`]])}`)}
+    ${sec("b-db","Dreambreakers",ul([
+      ["👥",`After round ${ROUNDS}, one dreambreaker per division with <b>all 9 players</b> from each club.`],
+      ["🎯",`Rally scoring, <b>first to 25</b> wins.`],
+      ["🔀",`Each club's player order is <b>randomised</b>.`],
+      ["🔄",`Players rotate in list order every <b>5 points</b> scored until a team reaches 21.`],
+      ["📋",`The rotation order is on the Draw under Dreambreakers.`]]))}
+    ${sec("b-card","Score cards",ic([
+      ["📝",`Your court's score card is at the court each round.`],
+      ["✏️",`Write each game's score as soon as it finishes, and <b>tick the club that won</b> it.`],
+      ["🤝",`Captains check the scores together, then bring the card to the tournament desk.`],
+      ["💻",`The committee enters every score, and the Draw and Standings update straight away.`]])+`
+      <p class="sub" style="margin:12px 0 0">Here's what a filled-in card looks like:</p>
+      <div class="bsample" aria-label="Example of a completed score card">
+        <span class="bstamp">Example</span>
+        <div class="bs-bar"><b>Round 2 · Court 4</b><span>DUPR 3.0 – 3.5</span></div>
+        <div class="bs-teams"><span>${esc(c.h.short)} Team 2</span><span class="vs">v</span><span>${esc(c.a.short)} Team 3</span></div>
+        <table>
+          <thead><tr><th>Game</th><th style="text-align:left">${esc(c.h.short)} pair</th><th colspan="2">Score</th><th style="text-align:right">${esc(c.a.short)} pair</th><th>Winner</th></tr></thead>
+          <tbody>
+            <tr><td><b>G1</b><small>Pairs 1 &amp; 2</small></td><td class="nm">Bree K. (C)<br>Alex R.</td><td><span class="sc">9</span></td><td><span class="sc">7</span></td><td class="nm r">Jen H. (C)<br>Phil N.</td><td class="wn"><span class="tk on">${esc(c.h.short)}</span><span class="tk">${esc(c.a.short)}</span></td></tr>
+            <tr><td><b>G2</b><small>Pairs 1 &amp; 3</small></td><td class="nm">Bree K. (C)<br>Kate C.</td><td><span class="sc">6</span></td><td><span class="sc">10</span></td><td class="nm r">Jen H. (C)<br>Fi W.</td><td class="wn"><span class="tk">${esc(c.h.short)}</span><span class="tk on">${esc(c.a.short)}</span></td></tr>
+            <tr><td><b>G3</b><small>Pairs 2 &amp; 3</small></td><td class="nm">Alex R.<br>Kate C.</td><td><span class="sc">8</span></td><td><span class="sc">7</span></td><td class="nm r">Phil N.<br>Fi W.</td><td class="wn"><span class="tk on">${esc(c.h.short)}</span><span class="tk">${esc(c.a.short)}</span></td></tr>
+          </tbody>
+        </table>
+        <p class="bs-foot"></p>
+      </div>`)}
+    ${sec("b-results","Results",ul([
+      ["🏆",`Every game won is <b>1 point</b> for your club, across both divisions.`],
+      ["🔢",`${nGames} games in total, so the first club to <b>${toWin} game wins</b> takes the day.`],
+      ["📺",`Follow it live on <b>Standings</b> and the TV.`]]))}
+  </div>`;
+}
+
 /* ----- Sausage Sizzle Showdown: lunch exhibition, 2 v 2, side-out scoring, first to 15, win by 2 ----- */
 const SZ_IMG={grill:"sz-grill.webp",mascot:"sz-mascot.webp",snag:"sz-snag.webp"};
 const SZ_COURT=`<svg aria-hidden="true" class="szabs szcourt" style="left:0;top:0" width="1280" height="720" viewBox="0 0 1280 720" preserveAspectRatio="none">
@@ -1329,14 +1464,15 @@ function loadJsPDF(){
     sc.onload=()=>res(window.jspdf.jsPDF); sc.onerror=()=>{jspdfP=null;rej(new Error("load"))}; document.head.appendChild(sc)});
 }
 const TX=s=>String(s??"").replace(/[–—]/g,"-").replace(/·/g,"-").replace(/[^\x20-\x7E]/g,"");
-const C_NAVY=[7,20,48],C_ATP=[23,71,196],C_DURAL=[31,122,28],C_LIME=[203,233,54],C_GREY=[236,239,244],C_INK=[20,24,32],C_MUTED=[100,108,124];
+// printer-friendly like Defend the Kitchen: light grey bars, dark text, no club colours
+const C_NAVY=[222,226,232],C_ATP=[20,24,32],C_DURAL=[20,24,32],C_LIME=[60,66,80],C_GREY=[236,239,244],C_INK=[20,24,32],C_MUTED=[100,108,124];
 function pairTxt(tk,g){const[p,q]=PAIRS[g-1],t=S.teams[tk];return [TX(t.players[p])+(p===0?" (C)":""),TX(t.players[q])+(q===0?" (C)":"")]}
 function pdfHead(doc,title,sub){
   const W=210;doc.setFillColor(...C_NAVY);doc.rect(0,0,W,18,"F");
   doc.setFillColor(...C_ATP);doc.rect(0,18,W/2,1.6,"F");doc.setFillColor(...C_DURAL);doc.rect(W/2,18,W/2,1.6,"F");
   doc.setTextColor(...C_LIME);doc.setFont("helvetica","bold");doc.setFontSize(7.5);
   doc.text(TX(`${E().name} - ${S.clubs.h.short} v ${S.clubs.a.short}`).toUpperCase(),10,6.5);
-  doc.setTextColor(255,255,255);doc.setFontSize(15);doc.text(TX(title),10,14);
+  doc.setTextColor(...C_INK);doc.setFontSize(15);doc.text(TX(title),10,14);
   doc.setFont("helvetica","normal");doc.setFontSize(8.5);
   const when=E().date?new Date(E().date+"T00:00").toLocaleDateString([], {weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
   doc.text(TX([when,E().venue].filter(Boolean).join("  |  ")),200,8,{align:"right"});
@@ -1355,7 +1491,7 @@ function pdfSchedule(doc){
     let y=27;
     const list=ms.filter(m=>m.r===r).sort((a,b)=>a.court-b.court);
     for(let g=1;g<=3;g++){
-      doc.setFillColor(...C_NAVY);doc.rect(10,y,190,8,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(12);
+      doc.setFillColor(...C_NAVY);doc.rect(10,y,190,8,"F");doc.setTextColor(...C_INK);doc.setFont("helvetica","bold");doc.setFontSize(12);
       doc.text(`ROUND ${r}  -  GAME ${g}`,13,y+5.7);
       doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...C_LIME);doc.text(`Players ${pairLabel(g)}`,197,y+5.7,{align:"right"});doc.setTextColor(...C_INK);
       y+=8;
@@ -1385,7 +1521,7 @@ function pdfDreambreaker(doc){
   doc.setTextColor(...C_INK); y+=10;
   S.divisions.forEach(d=>{
     const k=`db-${d.id}`;
-    doc.setFillColor(...C_NAVY);doc.rect(10,y,190,9,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(12);
+    doc.setFillColor(...C_NAVY);doc.rect(10,y,190,9,"F");doc.setTextColor(...C_INK);doc.setFont("helvetica","bold");doc.setFontSize(12);
     doc.text(TX(`COURT ${S.courts[k]}  -  ${d.name}`),13,y+6.3);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(...C_LIME);doc.text(TX(d.dupr),197,y+6.3,{align:"right"});doc.setTextColor(...C_INK);
     y+=13;
     doc.setFont("helvetica","bold");doc.setFontSize(10);clubText(doc,"h",`${S.clubs.h.name} rotation`,12,y);clubText(doc,"a",`${S.clubs.a.name} rotation`,108,y);
@@ -1409,33 +1545,32 @@ function pdfScoreCards(doc,first){
     const list=ms.filter(m=>m.court===c).sort((a,b)=>a.r-b.r);
     pdfHead(doc,`Score Cards - Court ${c}`,"Hand in at the tournament desk after each round");
     list.forEach((m,i)=>{
-      const r=m.r, x=8, y=24+i*88, w=194, h=85, nw=w/2-24;
+      const r=m.r, x=8, y=26+i*70, w=194, h=63, nw=w/2-36, xr=x+w-29, wx=x+w-24;   // xr: right-hand names end; wx: winner tick boxes
       doc.setDrawColor(150,156,170);doc.setLineWidth(.35);doc.roundedRect(x,y,w,h,2,2,"S");
       doc.setFillColor(...C_NAVY);doc.rect(x,y,w,9,"F");
-      doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(`ROUND ${r}  -  COURT ${m.court}`,x+3,y+6.2);
+      doc.setTextColor(...C_INK);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(`ROUND ${r}  -  COURT ${m.court}`,x+3,y+6.2);
       doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_LIME);doc.text(TX(m.div.dupr),x+w-3,y+6.2,{align:"right"});doc.setTextColor(...C_INK);
-      doc.setFont("helvetica","bold");doc.setFontSize(10);clubText(doc,"h",S.teams[m.h].name,x+3,y+15);clubText(doc,"a",S.teams[m.a].name,x+w-3,y+15,{align:"right"});
+      doc.setFont("helvetica","bold");doc.setFontSize(10);clubText(doc,"h",S.teams[m.h].name,x+3,y+15);clubText(doc,"a",S.teams[m.a].name,xr,y+15,{align:"right"});
       doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);doc.text("v",x+w/2,y+15,{align:"center"});
       // header row
       let ty=y+18; doc.setFillColor(...C_GREY);doc.rect(x+2,ty,w-4,5,"F");doc.setFont("helvetica","bold");doc.setFontSize(6.5);
-      doc.text("GAME",x+3.5,ty+3.5);doc.text(TX(S.clubs.h.short.toUpperCase()+" PAIR"),x+18,ty+3.5);doc.text("SCORE",x+w/2,ty+3.5,{align:"center"});doc.text(TX(S.clubs.a.short.toUpperCase()+" PAIR"),x+w-3.5,ty+3.5,{align:"right"});
+      doc.text("GAME",x+3.5,ty+3.5);doc.text(TX(S.clubs.h.short.toUpperCase()+" PAIR"),x+18,ty+3.5);doc.text("SCORE",x+w/2,ty+3.5,{align:"center"});doc.text(TX(S.clubs.a.short.toUpperCase()+" PAIR"),xr,ty+3.5,{align:"right"});doc.text("WINNER",wx+9,ty+3.5,{align:"center"});
       doc.setTextColor(...C_INK); ty+=5;
       for(let g=1;g<=3;g++){
-        const rh=12; const [h1,h2]=pairTxt(m.h,g),[a1,a2]=pairTxt(m.a,g);
-        doc.setDrawColor(210,214,222);doc.line(x+2,ty+rh,x+w-2,ty+rh);
-        doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text(`G${g}`,x+3.5,ty+5);
-        doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(`Pairs ${pairLabel(g)}`,x+3.5,ty+9);doc.setTextColor(...C_INK);
-        doc.setFontSize(9);doc.text(h1,x+18,ty+5,{maxWidth:nw});doc.text(h2,x+18,ty+9.5,{maxWidth:nw});
-        doc.text(a1,x+w-3.5,ty+5,{align:"right",maxWidth:nw});doc.text(a2,x+w-3.5,ty+9.5,{align:"right",maxWidth:nw});
-        doc.setDrawColor(...C_INK);doc.setLineWidth(.4);doc.rect(x+w/2-12,ty+1.8,10,8.4);doc.rect(x+w/2+2,ty+1.8,10,8.4);
-        doc.setFontSize(9);doc.text("-",x+w/2,ty+7,{align:"center"});doc.setLineWidth(.35);
+        const rh=13; const [h1,h2]=pairTxt(m.h,g),[a1,a2]=pairTxt(m.a,g);
+        if(g<3){doc.setDrawColor(210,214,222);doc.setLineWidth(.3);doc.line(x+2,ty+rh,x+w-2,ty+rh);}
+        doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text(`G${g}`,x+3.5,ty+5.5);
+        doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...C_MUTED);doc.text(`Pairs ${pairLabel(g)}`,x+3.5,ty+9.5);doc.setTextColor(...C_INK);
+        doc.setFontSize(9);doc.text(h1,x+18,ty+5.5,{maxWidth:nw});doc.text(h2,x+18,ty+10,{maxWidth:nw});
+        doc.text(a1,xr,ty+5.5,{align:"right",maxWidth:nw});doc.text(a2,xr,ty+10,{align:"right",maxWidth:nw});
+        doc.setDrawColor(...C_INK);doc.setLineWidth(.4);doc.rect(x+w/2-12,ty+2,10,9);doc.rect(x+w/2+2,ty+2,10,9);
+        doc.setFontSize(9);doc.text("-",x+w/2,ty+7.4,{align:"center"});
+        // tick one: which club won this game
+        doc.setLineWidth(.35);doc.setFont("helvetica","bold");doc.setFontSize(7);
+        doc.rect(wx,ty+2.4,3.4,3.4);doc.text(TX(S.clubs.h.short),wx+5,ty+5.2);
+        doc.rect(wx,ty+6.9,3.4,3.4);doc.text(TX(S.clubs.a.short),wx+5,ty+9.7);doc.setFont("helvetica","normal");
         ty+=rh;
       }
-      ty+=2; doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.text("GAMES WON",x+3.5,ty+5.5);
-      doc.rect(x+w/2-12,ty+.5,10,7);doc.rect(x+w/2+2,ty+.5,10,7);
-      ty+=11; doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(...C_MUTED);
-      doc.line(x+3.5,ty+6,x+w/2-3,ty+6);doc.line(x+w/2+3,ty+6,x+w-3.5,ty+6);
-      doc.text(TX(`${S.clubs.h.short} captain`),x+3.5,ty+9);doc.text(TX(`${S.clubs.a.short} captain`),x+w/2+3,ty+9);doc.setTextColor(...C_INK);
     });
     pdfFoot(doc);
   });
@@ -1462,7 +1597,7 @@ function pdfCourtSheets(doc,first){
       lastR=m.r;
       for(let g=1;g<=3;g++){
         const rh=17; const [h1,h2]=pairTxt(m.h,g),[a1,a2]=pairTxt(m.a,g);
-        if(g===1){doc.setFillColor(...C_NAVY);doc.rect(10,y,190,6,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(8.5);
+        if(g===1){doc.setFillColor(...C_NAVY);doc.rect(10,y,190,6,"F");doc.setTextColor(...C_INK);doc.setFont("helvetica","bold");doc.setFontSize(8.5);
           doc.text(TX(`ROUND ${m.r}   ${S.teams[m.h].name}  v  ${S.teams[m.a].name}`),12,y+4.2);doc.setTextColor(...C_INK);y+=6}
         doc.setDrawColor(210,214,222);doc.setLineWidth(.3);doc.line(10,y+rh,200,y+rh);
         doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text(`G${g}`,12,y+10);
@@ -1629,7 +1764,7 @@ function render(){
   if(canEdit||testMode) banners+=committeeBar();
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
   if(comingSoon()) banners=banners.split('<div class="banner').filter(b=>/testOn|testOff|toggleCommittee/.test(b)).map(b=>'<div class="banner'+b).join("");
-  const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="setup"?setupTab():drawTab();
+  const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="brief"&&SHOW_BRIEF?briefTab():tab==="setup"?setupTab():drawTab();
   app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
 }
 function saveBar(){
@@ -1756,6 +1891,7 @@ document.addEventListener("click",e=>{
     t.dataset.armed="1";t.textContent=t.dataset.confirm||"Tap again";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="tUndo"){timerUndo();return}
   if(a==="timerPage"){location.hash="timer";window.scrollTo(0,0);return}
+  if(a==="bjump"){const el=document.getElementById(t.dataset.id);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});return}
   if(a==="szPage"){location.hash="sizzle";window.scrollTo(0,0);return}
   if(a==="exitSz"){history.replaceState(null,"",location.pathname+location.search);tab="draw";onHash();return}
   if(a==="szR"){szRally(t.dataset.t);return}
