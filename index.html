@@ -154,6 +154,16 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .team.h{border-left:4px solid var(--atp)} .team.a{border-left:4px solid var(--dural)}
 .team b{font-weight:700}
 .team ol{margin:0;padding-left:20px;color:var(--ink)}
+.cicount{font-size:15px;margin:4px 0 10px}.cicount .num{font-size:24px;margin-right:2px}
+.ci{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--ink);font:inherit;font-size:15px;cursor:pointer;min-height:44px}
+.ci .box{flex:none;width:22px;height:22px;border-radius:5px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center}
+.ci.on{background:rgba(34,197,94,.16);border-color:#22c55e}
+.ci.on .box{background:#22c55e;border-color:#22c55e}
+.ci.on .box::after{content:"\2713";color:#fff;font-weight:800;font-size:15px;line-height:1}
+.ci .cap{margin-left:4px}
+.cilist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.ci .cin{flex:1;min-width:0}
+.ci .cit{flex:none;font-size:12px;font-weight:700}
 .field{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
 .field input{border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--surface);color:var(--ink);font-weight:500;font-size:15px;width:100%;min-width:0}
 .form{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
@@ -702,7 +712,7 @@ function liveBox(){
 function header(st){
   const c=S.clubs, soon=comingSoon();
   const tabs=[...(SHOW_BRIEF?[["brief","Briefing"]]:[]),["draw","Draw"],["standings","Standings"],["teams","Teams"]];
-  if(editing()) tabs.push(["setup","Committee setup"]);
+  if(editing()) tabs.push(["checkin","Check-in"],["setup","Committee setup"]);
   return `<header class="top"><div class="wrap">
     <div class="headrow">
       <div><div class="eyebrow">${esc(E().name)}${E().date?` · ${esc(new Date(E().date+"T00:00").toLocaleDateString([], {weekday:"long",day:"numeric",month:"long"}))}`:""}${E().venue?` · ${esc(E().venue)}`:""}</div>
@@ -829,6 +839,24 @@ function standingsTab(){
     return `<div class="card"><h3>${esc(dv(d))} · players</h3><div class="tbl"><table><thead><tr><th>Player</th><th>W</th><th>L</th><th>PF</th><th>PA</th><th>+/–</th></tr></thead><tbody>
     ${rows.map(p=>`<tr><td><span class="dot" style="background:var(--${sideOf(p.tk)==="h"?"atp":"dural"})"></span>${pn(p.tk,p.i)}<span class="pteam">${esc(S.teams[p.tk].name)}</span></td><td>${p.w}</td><td>${p.l}</td><td>${p.pf}</td><td>${p.pa}</td><td>${sgn(p.pf-p.pa)}</td></tr>`).join("")}
     </tbody></table></div></div>`}).join("")}</section>`;
+}
+
+/* ----- player check-in (committee only) ----- */
+let ciHide=ss.get("ciHide")==="1", ciT=null, quiet=false;
+const ciKeys=new Set();
+function ciAll(){return S.divisions.flatMap(d=>["h","a"].flatMap(s=>[1,2,3].flatMap(n=>{const k=`${d.id}-${s}${n}`;return S.teams[k].players.map((_,i)=>`${k}|${i}`)})))}
+function ciSave(){clearTimeout(ciT);ciT=setTimeout(async()=>{const ks=[...ciKeys];ciKeys.clear();if(!ks.length)return;quiet=true;try{await save(ks.map(k=>["checkin",k]))}finally{quiet=false}},800)}
+function ciToggle(k){S.checkin=S.checkin||{};if(S.checkin[k])delete S.checkin[k];else S.checkin[k]=1;ciKeys.add(k);render();ciSave()}
+function ciClear(){Object.keys(S.checkin||{}).forEach(k=>ciKeys.add(k));S.checkin={};render();ciSave()}
+function checkinTab(){
+  const ci=S.checkin||{}, all=ciAll(), done=all.filter(k=>ci[k]).length;
+  const club=s=>{const ks=all.filter(k=>sideOf(k)===s);return `${ks.filter(k=>ci[k]).length}/${ks.length}`};
+  return `<section class="card"><h3>Player check-in</h3><p class="sub">Tap a player's name when they arrive. Tap again to undo. Only the committee sees this tab.</p>
+    <div class="cicount"><b class="num">${done}</b> of ${all.length} checked in · <b class="atp">${esc(S.clubs.h.short)} ${club("h")}</b> · <b class="dural">${esc(S.clubs.a.short)} ${club("a")}</b></div>
+    <div class="actions"><button class="btn" data-act="ciHide">${ciHide?"Show everyone":"Hide checked-in players"}</button>${done?`<button class="btn" data-act="ciClear">Clear all check-ins</button>`:""}</div></section>`
+  +["h","a"].map(sd=>`<section class="card"><h3 class="${sd==="h"?"atp":"dural"}">${esc(S.clubs[sd].short)} players A–Z <span class="muted" style="font-size:.6em;font-style:normal">${club(sd)}</span></h3><div class="cilist">${all.filter(x=>sideOf(x)===sd).map(x=>{const[k,i]=x.split("|");return {x,k,i:+i,n:String(S.teams[k].players[+i]??"")}})
+      .sort((p,q)=>p.n.localeCompare(q.n,"en",{sensitivity:"base"})).map(({x,k,i})=>{const on=!!ci[x];if(ciHide&&on)return "";
+        return `<button class="ci${on?" on":""}" data-act="ci" data-k="${esc(x)}" aria-pressed="${on}"><span class="box" aria-hidden="true"></span><span class="cin">${pn(k,i)}</span><span class="cit ${sd==="h"?"atp":"dural"}">${esc(S.teams[k].name)} · ${esc(dv(S.divisions.find(d=>d.id===k.split("-")[0])))}</span></button>`}).join("")||`<span class="muted">Everyone is checked in.</span>`}</div></section>`).join("");
 }
 
 /* ----- teams ----- */
@@ -1757,14 +1785,14 @@ function render(){
   if(isTV()&&!comingSoon()){app.innerHTML=tvView();fitTV();return}
   if(isTimer()){app.innerHTML=timerPage()+(toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:"");return}
   const st=stats();
-  if(tab==="setup"&&!editing()) tab="draw";
+  if((tab==="setup"||tab==="checkin")&&!editing()) tab="draw";
   let banners="";
   if(S.demo) banners+=`<div class="banner warn"><span>Example names and Round 1 example scores are loaded so you can see how it works.</span>${editing()?`<button class="btn" data-act="clearDemo">Clear example scores</button>`:""}</div>`;
   if(S.sizzle?.tv&&!comingSoon()) banners+=szCard();
   if(canEdit||testMode) banners+=committeeBar();
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
   if(comingSoon()) banners=banners.split('<div class="banner').filter(b=>/testOn|testOff|toggleCommittee/.test(b)).map(b=>'<div class="banner'+b).join("");
-  const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="brief"&&SHOW_BRIEF?briefTab():tab==="setup"?setupTab():drawTab();
+  const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="brief"&&SHOW_BRIEF?briefTab():tab==="setup"?setupTab():tab==="checkin"?checkinTab():drawTab();
   app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
 }
 function saveBar(){
@@ -1812,7 +1840,7 @@ async function save(extra=[]){
     const v=getPath(S,p); args.push(new FieldPath(...p), v===undefined?deleteField():clone(v));}
   if(!args.length)return;
   const b=$("#saveBtn"); if(b){b.disabled=true;b.textContent="Saving…"}
-  try{ await updateDoc(evRef,...args); dirty.clear(); if(!isSizzle()) toast("Saved. Every screen, including the TV, is updated."); }
+  try{ await updateDoc(evRef,...args); dirty.clear(); if(!isSizzle()&&!quiet) toast("Saved. Every screen, including the TV, is updated."); }
   catch(e){
     if(b){b.disabled=false;b.textContent="Save and update all screens"}
     toast(e&&e.code==="permission-denied"?"Your login isn't on the committee list, so changes can't be saved.":"Couldn't save. Check the internet connection and try again.");
@@ -1895,6 +1923,10 @@ document.addEventListener("click",e=>{
   if(a==="szPage"){location.hash="sizzle";window.scrollTo(0,0);return}
   if(a==="exitSz"){history.replaceState(null,"",location.pathname+location.search);tab="draw";onHash();return}
   if(a==="szR"){szRally(t.dataset.t);return}
+  if(a==="ci"){ciToggle(t.dataset.k);return}
+  if(a==="ciHide"){ciHide=!ciHide;ss.set("ciHide",ciHide?"1":"0");render();return}
+  if(a==="ciClear"){if(t.dataset.armed){ciClear();return}
+    t.dataset.armed="1";t.textContent="Tap again to clear every check-in";setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;render()}},4000);return}
   if(a==="szUndo"){szUndo();return}
   if(a==="szFirst"){szFirst(t.dataset.t);return}
   if(a==="szTvOn"){szShow(true);return}
