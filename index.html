@@ -1665,58 +1665,117 @@ function pdfTable(doc,y,cols,rows,opt={}){
   });
   return y;
 }
+/* ----- final results PDF: full colour with club logos (the other sheets stay printer-friendly) ----- */
+const R_NAVY=[6,18,43],R_ATP=[23,71,196],R_DURAL=[31,122,28],R_LIME=[203,233,54],R_GOLD=[247,197,32],R_SOFT=[243,246,251],R_INK=[20,24,32],R_MUTED=[100,108,124],R_WHITE=[255,255,255];
+let PDF_LOGOS={};
+async function pdfLogos(){   // the logos are webp inside the page CSS; the PDF maker needs png
+  const css=[...document.querySelectorAll("style")].map(x=>x.textContent).join("\n"), out={};
+  for(const sd of ["h","a"]){const m=css.match(new RegExp(`--logo-${sd}:url\\("(data:[^"]+)"\\)`));if(!m)continue;
+    try{const img=new Image();img.src=m[1];await img.decode();const cv=document.createElement("canvas");cv.width=cv.height=240;
+      const cx=cv.getContext("2d"),k=Math.min(240/img.naturalWidth,240/img.naturalHeight),w=img.naturalWidth*k,h=img.naturalHeight*k;
+      cx.drawImage(img,(240-w)/2,(240-h)/2,w,h);out[sd]=cv.toDataURL("image/png")}catch(e){}}
+  return out;
+}
+const rCol=sd=>sd==="h"?R_ATP:R_DURAL;
+function rLogo(doc,sd,cx,cy,r){doc.setFillColor(...R_WHITE);doc.circle(cx,cy,r,"F");if(PDF_LOGOS[sd]){const k=r*1.38;doc.addImage(PDF_LOGOS[sd],"PNG",cx-k/2,cy-k/2,k,k)}}
+function rHead(doc,title,sub){
+  const W=210;doc.setFillColor(...R_NAVY);doc.rect(0,0,W,30,"F");
+  doc.setFillColor(...R_ATP);doc.rect(0,30,W/2,2.2,"F");doc.setFillColor(...R_DURAL);doc.rect(W/2,30,W/2,2.2,"F");
+  rLogo(doc,"h",18,15,10.5);rLogo(doc,"a",192,15,10.5);
+  doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...R_LIME);
+  doc.text(TX(`${E().name} - ${S.clubs.h.short} v ${S.clubs.a.short}`).toUpperCase(),105,8.5,{align:"center"});
+  doc.setTextColor(...R_WHITE);doc.setFontSize(17);doc.text(TX(title).toUpperCase(),105,17,{align:"center"});
+  const when=E().date?new Date(E().date+"T00:00").toLocaleDateString([], {weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(200,212,235);
+  doc.text(TX([when,E().venue,sub].filter(Boolean).join("  |  ")),105,24.5,{align:"center"});
+  doc.setTextColor(...R_INK);
+}
+function rFoot(doc){doc.setFillColor(...R_ATP);doc.rect(0,295,105,2,"F");doc.setFillColor(...R_DURAL);doc.rect(105,295,105,2,"F");
+  doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...R_MUTED);doc.text(TX(`Printed ${new Date().toLocaleString()}`),105,291,{align:"center"});doc.setTextColor(...R_INK)}
+function rSection(doc,y,txt){doc.setFillColor(...R_LIME);doc.rect(10,y-4.2,2.2,5.4,"F");doc.setFont("helvetica","bold");doc.setFontSize(11.5);doc.setTextColor(...R_NAVY);doc.text(TX(txt).toUpperCase(),14.5,y);doc.setTextColor(...R_INK);return y+2.5}
+function rTable(doc,y,cols,rows,opt={}){
+  // cols: [{h,x,w,align}]; a cell can be {t,b,side,muted,fs,gold}; opt.side(row) colours a strip down the left edge
+  const rh=opt.rh||6.4;
+  doc.setFillColor(...R_NAVY);doc.rect(10,y,190,6,"F");doc.setFont("helvetica","bold");doc.setFontSize(7.2);doc.setTextColor(...R_WHITE);
+  cols.forEach(c=>doc.text(TX(c.h).toUpperCase(),c.align==="right"?c.x+c.w:c.align==="center"?c.x+c.w/2:c.x,y+4.1,{align:c.align||"left"}));
+  doc.setTextColor(...R_INK); y+=6;
+  rows.forEach((r,i)=>{
+    if(i%2){doc.setFillColor(...R_SOFT);doc.rect(10,y,190,rh,"F")}
+    const sd=opt.side?opt.side(i):null; if(sd){doc.setFillColor(...rCol(sd));doc.rect(10,y,1.6,rh,"F")}
+    cols.forEach((c,j)=>{const v=r[j];if(v==null)return;const t=typeof v==="object"?v:{t:v};
+      const tx=c.align==="right"?c.x+c.w:c.align==="center"?c.x+c.w/2:c.x;
+      if(t.gold){doc.setFillColor(...R_GOLD);doc.circle(tx+1.4,y+rh/2,2.5,"F")}
+      doc.setFont("helvetica",t.b||t.gold?"bold":"normal");doc.setFontSize(t.fs||8.5);
+      if(t.side)doc.setTextColor(...rCol(t.side)); else if(t.muted)doc.setTextColor(...R_MUTED); else if(t.gold)doc.setTextColor(...R_NAVY);
+      doc.text(TX(String(t.t)),t.gold?tx+1.4:tx,y+rh-2,{align:t.gold?"center":c.align||"left",maxWidth:c.w});
+      doc.setTextColor(...R_INK);});
+    y+=rh;
+  });
+  doc.setDrawColor(...R_NAVY);doc.setLineWidth(.3);doc.line(10,y,200,y);
+  return y;
+}
 function pdfResults(doc){
   const st=stats(), c=S.clubs, H=st.club.h, A=st.club.a;
   const win=H.w>A.w?"h":A.w>H.w?"a":null;
-  pdfHead(doc,"Final results",win?`${c[win].name} win the challenge`:"Challenge drawn");
-  // club totals
-  let y=26;
-  [["h",10],["a",108]].forEach(([sd,x])=>{const t=st.club[sd];
-    doc.setDrawColor(...(sd==="h"?C_ATP:C_DURAL));doc.setLineWidth(1.2);doc.line(x,y,x+92,y);doc.setLineWidth(.3);
-    doc.setFont("helvetica","bold");doc.setFontSize(9);clubText(doc,sd,c[sd].name.toUpperCase(),x,y+6);
-    doc.setFontSize(30);clubText(doc,sd,String(t.w),x,y+19);
-    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...C_MUTED);
-    doc.text(TX(`Games won  -  ${S.divisions.map(d=>`${dv(d)}: ${t.byDiv[d.id]}`).join("  -  ")}`),x+20,y+14);
-    doc.text(TX(`Points ${t.pf}`),x+20,y+19);doc.setTextColor(...C_INK);
+  rHead(doc,"Final results");
+  let y=38;
+  // winner banner
+  doc.setFillColor(...(win?R_GOLD:R_SOFT));doc.roundedRect(10,y,190,11,2,2,"F");
+  doc.setFont("helvetica","bold");doc.setFontSize(12.5);doc.setTextColor(...R_NAVY);
+  doc.text(TX(win?`${c[win].name} win the challenge  ${st.club[win].w} - ${st.club[win==="h"?"a":"h"].w}`:`Challenge drawn  ${H.w} - ${A.w}`).toUpperCase(),105,y+7.4,{align:"center"});
+  y+=15;
+  // club cards
+  [["h",10],["a",106]].forEach(([sd,x])=>{const t=st.club[sd];
+    doc.setFillColor(...rCol(sd));doc.roundedRect(x,y,94,40,3,3,"F");
+    rLogo(doc,sd,x+15,y+20,11);
+    doc.setTextColor(...R_WHITE);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text(TX(c[sd].name).toUpperCase(),x+31,y+8);
+    doc.setFontSize(34);doc.text(String(t.w),x+31,y+24);
+    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text("games won",x+31+doc.getTextWidth(String(t.w))*34/8+2.5,y+24);
+    doc.setFontSize(7.8);doc.text(TX(S.divisions.map(d=>`${dv(d)}: ${t.byDiv[d.id]}`).join("   ")),x+31,y+31);
+    doc.text(TX(`Points scored: ${t.pf}`),x+31,y+36);
+    if(win===sd){doc.setFillColor(...R_GOLD);doc.roundedRect(x+70,y+4,20,6,1.5,1.5,"F");doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...R_NAVY);doc.text("WINNERS",x+80,y+8.1,{align:"center"})}
+    doc.setTextColor(...R_INK);
   });
-  y+=27;
+  y+=50;
   // dreambreakers
-  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text("Dreambreakers",10,y);y+=2;
-  y=pdfTable(doc,y,[{h:"Division",x:12,w:60},{h:c.h.short,x:110,w:15,align:"center"},{h:c.a.short,x:130,w:15,align:"center"},{h:"Result",x:150,w:48,align:"right"}],
-    S.divisions.map(d=>{const i=dbInfo(d),played=i.h+i.a>0;return [dv(d),{t:played?i.h:"-",b:1,side:"h"},{t:played?i.a:"-",b:1,side:"a"},
-      i.over?{t:`${c[i.winner].short} win`,b:1,side:i.winner}:{t:played?"Not finished":"Not played",muted:1}]}));
-  y+=6;
+  y=rSection(doc,y,"Dreambreakers");
+  y=rTable(doc,y,[{h:"Division",x:14,w:60},{h:c.h.short,x:110,w:15,align:"center"},{h:c.a.short,x:130,w:15,align:"center"},{h:"Result",x:150,w:48,align:"right"}],
+    S.divisions.map(d=>{const i=dbInfo(d),played=i.h+i.a>0;return [{t:dv(d),b:1},{t:played?i.h:"-",b:1,side:"h"},{t:played?i.a:"-",b:1,side:"a"},
+      i.over?{t:`${c[i.winner].short} win`,b:1,side:i.winner}:{t:played?"Not finished":"Not played",muted:1}]}),{side:i=>{const x=dbInfo(S.divisions[i]);return x.over?x.winner:null}});
+  y+=9;
   // team standings
   S.divisions.forEach(d=>{
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${dv(d)} teams`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);y+=2;
+    y=rSection(doc,y,`${dv(d)} teams`);
     const rows=rank(Object.values(st.team).filter(t=>t.k.startsWith(d.id+"-")));
-    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Team",x:20,w:60},{h:"W",x:106,w:12,align:"right"},{h:"L",x:126,w:12,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:184,w:14,align:"right"}],
-      rows.map((t,i)=>[i+1,{t:S.teams[t.k].name,b:1,side:sideOf(t.k)},t.w,t.l,t.pf,t.pa,{t:sgn(t.pf-t.pa),b:1}]));
-    y+=6;
+    y=rTable(doc,y,[{h:"#",x:13,w:6},{h:"Team",x:22,w:60},{h:"W",x:106,w:12,align:"right"},{h:"L",x:126,w:12,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:184,w:14,align:"right"}],
+      rows.map((t,i)=>[i===0?{t:1,gold:1}:i+1,{t:S.teams[t.k].name,b:1,side:sideOf(t.k)},t.w,t.l,t.pf,t.pa,{t:sgn(t.pf-t.pa),b:1}]),{side:i=>sideOf(rows[i].k)});
+    y+=9;
   });
-  pdfFoot(doc);
+  rFoot(doc);
   // players
-  doc.addPage(); pdfHead(doc,"Final results - players","Every player played 6 games");
-  y=27;
+  doc.addPage(); rHead(doc,"Final results - players","Every player played 6 games");
+  y=42;
   S.divisions.forEach(d=>{
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(TX(`${dv(d)} players`),10,y);doc.setFont("helvetica","normal");doc.setFontSize(8);y+=2;
+    y=rSection(doc,y,`${dv(d)} players`);
     const rows=rank(Object.values(st.player).filter(p=>p.tk.startsWith(d.id+"-")));
-    y=pdfTable(doc,y,[{h:"#",x:12,w:6},{h:"Player",x:20,w:56},{h:"Team",x:80,w:38},{h:"W",x:122,w:10,align:"right"},{h:"L",x:136,w:10,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:182,w:16,align:"right"}],
-      rows.map((p,i)=>[i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.l,p.pf,p.pa,{t:sgn(p.pf-p.pa),b:1}]),{rh:5.9});
-    y+=7;
+    y=rTable(doc,y,[{h:"#",x:13,w:6},{h:"Player",x:22,w:56},{h:"Team",x:80,w:38},{h:"W",x:122,w:10,align:"right"},{h:"L",x:136,w:10,align:"right"},{h:"PF",x:150,w:12,align:"right"},{h:"PA",x:166,w:12,align:"right"},{h:"+/-",x:182,w:16,align:"right"}],
+      rows.map((p,i)=>[i===0?{t:1,gold:1}:i+1,{t:S.teams[p.tk].players[p.i]+(p.i===0?" (C)":""),b:1},{t:S.teams[p.tk].name,side:sideOf(p.tk)},p.w,p.l,p.pf,p.pa,{t:sgn(p.pf-p.pa),b:1}]),{rh:6,side:i=>sideOf(rows[i].tk)});
+    y+=9;
   });
-  pdfFoot(doc);
+  rFoot(doc);
   // every score
-  doc.addPage(); pdfHead(doc,"Final results - every score",`Scores shown ${c.h.short} first`);
-  y=27; const ms=matches();
+  doc.addPage(); rHead(doc,"Final results - every score",`Scores shown ${c.h.short} first`);
+  y=42; const ms=matches();
   for(let r=1;r<=ROUNDS;r++){
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(`Round ${r}`,10,y);y+=2;
-    y=pdfTable(doc,y,[{h:"Ct",x:12,w:8},{h:"Rating",x:22,w:28},{h:c.h.short+" team",x:52,w:34},{h:c.a.short+" team",x:88,w:34},{h:"Game 1",x:124,w:16,align:"center"},{h:"Game 2",x:142,w:16,align:"center"},{h:"Game 3",x:160,w:16,align:"center"},{h:"Games",x:182,w:16,align:"center"}],
-      ms.filter(m=>m.r===r).sort((a,b)=>a.court-b.court).map(m=>{let hw=0,aw=0;const g=[1,2,3].map(n=>{const x=sc(m.key,n);if(!x)return {t:"-",muted:1};if(x[0]>x[1])hw++;else if(x[1]>x[0])aw++;return `${x[0]}-${x[1]}`});
-        return [m.court,{t:m.div.dupr,fs:7.5,muted:1},{t:S.teams[m.h].name,b:1,side:"h"},{t:S.teams[m.a].name,b:1,side:"a"},...g,{t:`${hw}-${aw}`,b:1}]}));
-    y+=7;
+    y=rSection(doc,y,`Round ${r}`);
+    const list=ms.filter(m=>m.r===r).sort((a,b)=>a.court-b.court);
+    const res=list.map(m=>{let hw=0,aw=0;const g=[1,2,3].map(n=>{const x=sc(m.key,n);if(!x)return {t:"-",muted:1};if(x[0]>x[1])hw++;else if(x[1]>x[0])aw++;return `${x[0]}-${x[1]}`});return {m,g,hw,aw}});
+    y=rTable(doc,y,[{h:"Ct",x:13,w:8},{h:"Rating",x:22,w:28},{h:c.h.short+" team",x:52,w:34},{h:c.a.short+" team",x:88,w:34},{h:"Game 1",x:124,w:16,align:"center"},{h:"Game 2",x:142,w:16,align:"center"},{h:"Game 3",x:160,w:16,align:"center"},{h:"Games",x:182,w:16,align:"center"}],
+      res.map(({m,g,hw,aw})=>[m.court,{t:m.div.dupr,fs:7.5,muted:1},{t:S.teams[m.h].name,b:1,side:"h"},{t:S.teams[m.a].name,b:1,side:"a"},...g,{t:`${hw}-${aw}`,b:1,side:hw>aw?"h":aw>hw?"a":null}]),
+      {side:i=>res[i].hw>res[i].aw?"h":res[i].aw>res[i].hw?"a":null});
+    y+=9;
   }
-  pdfFoot(doc);
+  rFoot(doc);
 }
 function buildPDF(JsPDF,kind){
   const doc=new JsPDF({unit:"mm",format:"a4"});
@@ -1728,6 +1787,7 @@ function buildPDF(JsPDF,kind){
 }
 async function makeSheets(kind){
   let JsPDF; try{JsPDF=await loadJsPDF()}catch(e){toast("Couldn't load the PDF maker. Check the internet connection and try again.");return}
+  if(kind==="results") PDF_LOGOS=await pdfLogos();
   const doc=buildPDF(JsPDF,kind);
   const names={all:"All sheets",schedule:"Schedule",cards:"Score Cards",courts:"Court sheets",results:"Final results"};
   const a=document.createElement("a");a.href=URL.createObjectURL(doc.output("blob"));a.download=`ATP v Dural Interclub - ${names[kind]}.pdf`;
