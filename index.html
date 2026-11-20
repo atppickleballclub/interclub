@@ -472,6 +472,31 @@ body.tkflash .tkp .tkcd,body.tkflash .tkp .tklbl{color:#fff}
 .installbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;margin:28px 0 -8px;text-align:center}
 .installbar img{width:28px;height:28px;border-radius:7px}
 
+
+/* ===== sunlight court cards: only the cards on the Draw go light ===== */
+main .match{
+  --surface:#FFFFFF; --sunk:#F3F5F8; --ink:#0F172A; --muted:#5B6576; --line:#DCE1E7;
+  --atp:#1D4ED8; --atp-soft:#E7ECF4; --dural:#15803D; --dural-soft:#E4F4EA;
+  --live-soft:#FFF7DB; --warn:#B45309; --warn-soft:#FFF4DC; --gold:#D97706; --on-lime:#fff;
+  background:#fff;color:#0F172A;border-color:#DCE1E7;color-scheme:light}
+main .match.isLive{border-color:#cbe936;box-shadow:0 0 0 2px #cbe936}
+main .match .court{background:#1E293B;color:#fff}
+main .match .pair .pn{font-weight:700}
+main .match .score .win-h{background:#1D4ED8;color:#fff;box-shadow:none}
+main .match .score .win-a{background:#15803D;color:#fff;box-shadow:none}
+main .match .score input{background:#fff;border:1.5px solid #CBD3DD;color:#0F172A}
+main .match .game.cur{box-shadow:inset 3px 0 0 #D97706}
+
+/* ===== sunlight standings: only the Standings cards go light ===== */
+main.tab-standings .card,main.tab-standings .clubtot{
+  --surface:#FFFFFF; --sunk:#F3F5F8; --ink:#0F172A; --muted:#5B6576; --line:#DCE1E7;
+  --atp:#1D4ED8; --atp-soft:#E7ECF4; --dural:#15803D; --dural-soft:#E4F4EA; --gold:#D97706; --lime:#0F172A;
+  background:#fff;color:#0F172A;border-color:#DCE1E7;color-scheme:light}
+main.tab-standings .card h3,main.tab-standings .clubtot .eyebrow{color:#0F172A}
+main.tab-standings td,main.tab-standings th{border-color:#E8ECF1}
+main.tab-standings th{color:#5B6576}
+main.tab-standings .clubtot.h{border-top-color:#1D4ED8} main.tab-standings .clubtot.a{border-top-color:#15803D}
+main.tab-standings .clubtot .big.atp{color:#1D4ED8} main.tab-standings .clubtot .big.dural{color:#15803D}
 </style>
 </head>
 <body>
@@ -1861,7 +1886,7 @@ function render(){
   else if(readOnlyReason) banners+=`<div class="banner info"><span>${esc(readOnlyReason)}</span></div>`;
   if(comingSoon()) banners=banners.split('<div class="banner').filter(b=>/testOn|testOff|toggleCommittee/.test(b)).map(b=>'<div class="banner'+b).join("");
   const body=comingSoon()?soonPage():tab==="standings"?standingsTab():tab==="teams"?teamsTab():tab==="brief"&&SHOW_BRIEF?briefTab():tab==="setup"?setupTab():tab==="checkin"?checkinTab():drawTab();
-  app.innerHTML=`${header(st)}<main><div class="wrap">${banners}${body}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
+  app.innerHTML=`${header(st)}<main class="tab-${comingSoon()?"soon":tab}"><div class="wrap">${banners}${body}${loginBox()}</div></main>${saveBar()}${toastMsg?`<div class="toast" role="status">${esc(toastMsg)}</div>`:""}`;
 }
 function saveBar(){
   if(!editing()||!dirty.size) return "";
